@@ -123,7 +123,7 @@ Never provide investment advice or make specific trading recommendations.`;
       );
     }
 
-    // Call OpenRouter API directly
+    // Call OpenRouter API directly (streaming disabled for Arcee AI compatibility)
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -135,9 +135,9 @@ Never provide investment advice or make specific trading recommendations.`;
       body: JSON.stringify({
         model: MODEL_NAME,
         messages: messagesWithSystem,
-        max_tokens: 500,
+        max_tokens: 1000,
         temperature: 0.7,
-        stream: true,
+        stream: false,
       }),
     });
 
@@ -150,7 +150,7 @@ Never provide investment advice or make specific trading recommendations.`;
       );
     }
 
-    // Return streaming response
+    // Return complete response
     return new Response(response.body, {
       headers: {
         "Content-Type": "text/plain",
