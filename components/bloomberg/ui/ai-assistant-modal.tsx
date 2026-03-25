@@ -100,8 +100,8 @@ export function AIAssistantModal({
     const prompt = getFullPrompt();
     const encodedPrompt = encodeURIComponent(prompt);
     
-    const deerFlowUrl = `http://192.168.2.2:2026?prompt=${encodedPrompt}`;
-    const zeroClawUrl = `http://192.168.2.2:42617?prompt=${encodedPrompt}`;
+    const deerFlowUrl = `http://192.168.2.2:2026/workspace/chats/new?prompt=${encodedPrompt}`;
+    const zeroClawUrl = `http://192.168.2.2:42617/ask?prompt=${encodedPrompt}`;
     
     const openedWindow = window.open(deerFlowUrl, "_blank");
     if (!openedWindow || openedWindow.closed) {
