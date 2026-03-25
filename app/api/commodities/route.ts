@@ -21,11 +21,11 @@ interface Commodity {
 
 // Realistic base prices USD (March 2026)
 const baseCommodities: Omit<Commodity, "change24h" | "changePct24h" | "high24h" | "low24h" | "sparkline" | "lastUpdated">[] = [
-  // Precious Metals (USD/oz)
-  { id: "GOLD", name: "Gold", symbol: "XAU", price: 3034.50, unit: "oz" },
-  { id: "SILVER", name: "Silver", symbol: "XAG", price: 32.85, unit: "oz" },
-  { id: "PLATINUM", name: "Platinum", symbol: "XPT", price: 978.00, unit: "oz" },
-  { id: "PALLADIUM", name: "Palladium", symbol: "XPD", price: 1015.00, unit: "oz" },
+  // Precious Metals (USD/oz) - Source: BCV March 2026
+  { id: "GOLD", name: "Gold", symbol: "XAU", price: 4534.36, unit: "oz" },
+  { id: "SILVER", name: "Silver", symbol: "XAG", price: 24.50, unit: "oz" },
+  { id: "PLATINUM", name: "Platinum", symbol: "XPT", price: 920.00, unit: "oz" },
+  { id: "PALLADIUM", name: "Palladium", symbol: "XPD", price: 980.00, unit: "oz" },
   
   // Base Metals (USD/MT unless noted)
   { id: "COPPER", name: "Copper", symbol: "HG", price: 4.12, unit: "lb" },
