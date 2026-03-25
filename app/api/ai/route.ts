@@ -9,9 +9,9 @@ export const maxDuration = 30;
 
 export const runtime = "edge";
 
-// OpenRouter configuration
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "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";
-const MODEL_NAME = "google/gemma-3n-e4b-it:free";
+// OpenClaw configuration (bypasses OpenRouter)
+const OPENCLAW_URL = process.env.OPENCLAW_URL || "http://192.168.2.2:42617";
+const OPENCLAW_TOKEN = process.env.OPENCLAW_TOKEN || "456591315a5f2aa2a104b1ff1dc24210680fd855a11caf4e";
 
 // Define validation schema for request body
 const requestSchema = z.object({
@@ -115,42 +115,31 @@ Never provide investment advice or make specific trading recommendations.`;
       ...messages,
     ];
 
-    // Check API key
-    if (!OPENROUTER_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "OpenRouter API key not configured" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // Call OpenRouter API directly (streaming disabled for Arcee AI compatibility)
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    // Call OpenClaw API (bypasses OpenRouter rate limits)
+    const response = await fetch(`${OPENCLAW_URL}/v1/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-        "HTTP-Referer": process.env.ALLOWED_ORIGINS?.split(",")[0] || "http://localhost:3000",
-        "X-Title": "Bloomberg Terminal",
+        Authorization: `Bearer ${OPENCLAW_TOKEN}`,
       },
       body: JSON.stringify({
-        model: MODEL_NAME,
+        model: "gpt-4",
         messages: messagesWithSystem,
         max_tokens: 1000,
-        temperature: 0.7,
         stream: true,
       }),
     });
 
     if (!response.ok) {
       const error = await response.text();
-      console.error("OpenRouter API error:", error);
+      console.error("OpenClaw API error:", error);
       return new Response(
         JSON.stringify({ error: "Failed to generate AI response" }),
         { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // Return complete response
+    // Return streaming response
     return new Response(response.body, {
       headers: {
         "Content-Type": "text/plain",
