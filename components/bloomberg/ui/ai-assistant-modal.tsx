@@ -100,12 +100,12 @@ export function AIAssistantModal({
     const prompt = getFullPrompt();
     const encodedPrompt = encodeURIComponent(prompt);
     
-    const zeroClawUrl = `http://192.168.2.2:42617/ask?prompt=${encodedPrompt}`;
     const deerFlowUrl = `http://192.168.2.2:2026?prompt=${encodedPrompt}`;
+    const zeroClawUrl = `http://192.168.2.2:42617?prompt=${encodedPrompt}`;
     
-    const openedWindow = window.open(zeroClawUrl, "_blank");
+    const openedWindow = window.open(deerFlowUrl, "_blank");
     if (!openedWindow || openedWindow.closed) {
-      window.open(deerFlowUrl, "_blank");
+      window.open(zeroClawUrl, "_blank");
     }
   };
 
@@ -267,8 +267,8 @@ export function AIAssistantModal({
               onClick={handleSend}
               className="flex items-center gap-1"
             >
-              <Send className="w-3 h-3" />
-              ENVOYER A ZEROClAW
+<Send className="w-3 h-3" />
+              ENVOYER A DEERFLOW
             </BloombergButton>
           </div>
         </div>
