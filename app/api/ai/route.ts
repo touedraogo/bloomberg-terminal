@@ -161,10 +161,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Return streaming response
-    return new Response(response.body, {
+    // Return complete response as JSON
+    const responseData = await response.json();
+    return new Response(JSON.stringify(responseData), {
       headers: {
-        "Content-Type": "text/plain",
+        "Content-Type": "application/json",
         "X-RateLimit-Limit": rateLimitResult.limit.toString(),
         "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
         "X-RateLimit-Reset": rateLimitResult.reset.toString(),
