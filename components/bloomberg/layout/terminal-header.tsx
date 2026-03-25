@@ -4,6 +4,7 @@ import {
   Activity,
   AlertTriangle,
   BarChart2,
+  Bitcoin,
   Database,
   HelpCircle,
   Moon,
@@ -26,6 +27,7 @@ type TerminalHeaderProps = {
   onMoversClick: () => void;
   onVolatilityClick: () => void;
   onRmiClick: () => void;
+  onCryptoClick: () => void;
   onHelpClick: () => void;
   onThemeToggle: () => void;
 };
@@ -39,6 +41,7 @@ export function TerminalHeader({
   onMoversClick,
   onVolatilityClick,
   onRmiClick,
+  onCryptoClick,
   onHelpClick,
   onThemeToggle,
 }: TerminalHeaderProps) {
@@ -109,6 +112,10 @@ export function TerminalHeader({
       <BloombergButton color="green" onClick={onRmiClick}>
         <Activity className="h-3 w-3 mr-1" />
         RMI
+      </BloombergButton>
+      <BloombergButton color="green" onClick={onCryptoClick}>
+        <Bitcoin className="h-3 w-3 mr-1" />
+        CRYPTO
       </BloombergButton>
 
       <BloombergButton color="accent" onClick={onHelpClick}>
