@@ -29,7 +29,7 @@ export function AIChatPanel({
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
   const [input, setInput] = useState(initialPrompt || "");
   const [isLoading, setIsLoading] = useState(false);
-  const [useContext, setUseContext] = useState(true);
+  const [mode, setMode] = useState<"context" | "free">("context");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const colors = isDarkMode ? bloombergColors.dark : bloombergColors.light;
 
@@ -42,6 +42,11 @@ export function AIChatPanel({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const getPrefilledPrompt = () => {
+    const dataContext = getContextForView();
+    return `Based on this data:\n${dataContext}\n\nProvide a brief market analysis and insights.`;
+  };
 
   const getContextForView = () => {
     let context = `Bloomberg Terminal - ${currentView.toUpperCase()}\n\n`;
@@ -99,7 +104,7 @@ export function AIChatPanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: [{ role: "user", content: userMessage }],
-          marketData: useContext ? { context: getContextForView(), currentView } : undefined,
+          marketData: mode === "context" ? { context: getContextForView(), currentView } : undefined,
         }),
       });
 
@@ -181,16 +186,33 @@ export function AIChatPanel({
           </button>
         </div>
 
-        {/* Toggle */}
-        <div className="flex items-center gap-4 px-4 py-2 border-b" style={{ borderColor: colors.border }}>
+        {/* Mode Selection */}
+        <div className="flex items-center gap-6 px-4 py-2 border-b" style={{ borderColor: colors.border }}>
           <label className="flex items-center gap-2 cursor-pointer text-xs">
             <input
-              type="checkbox"
-              checked={useContext}
-              onChange={(e) => setUseContext(e.target.checked)}
+              type="radio"
+              name="aimode"
+              checked={mode === "context"}
+              onChange={() => {
+                setMode("context");
+                setInput(getPrefilledPrompt());
+              }}
               className="accent-orange-500"
             />
-            <span>Inclure contexte marché</span>
+            <span>Avec Contexte (pré-rempli)</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer text-xs">
+            <input
+              type="radio"
+              name="aimode"
+              checked={mode === "free"}
+              onChange={() => {
+                setMode("free");
+                setInput("");
+              }}
+              className="accent-orange-500"
+            />
+            <span>Libre</span>
           </label>
         </div>
 
@@ -198,7 +220,9 @@ export function AIChatPanel({
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {messages.length === 0 && !isLoading && (
             <div className="text-center text-xs py-8" style={{ color: colors.textSecondary }}>
-              Tapez votre question et appuyez sur Entrée
+              {mode === "context" 
+                ? "Le prompt est pré-rempli avec les données actuelles. Modifiez-le ou envoyez directement."
+                : "Tapez votre question et appuyez sur Entrée."}
             </div>
           )}
 
@@ -240,7 +264,7 @@ export function AIChatPanel({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={useContext ? "Question avec contexte marché..." : "Question libre..."}
+              placeholder={mode === "context" ? "Question avec contexte marché..." : "Question libre..."}
               className="flex-1 px-3 py-2 rounded text-xs focus:outline-none focus:ring-1"
               style={{ backgroundColor: colors.background, color: colors.text }}
             />
