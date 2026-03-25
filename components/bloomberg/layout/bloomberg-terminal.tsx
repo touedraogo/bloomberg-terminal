@@ -30,7 +30,7 @@ import { RmiView } from "../views/rmi-view";
 import VolatilityView from "../views/volatility-view";
 import CryptoView from "../views/crypto-view";
 import CommoditiesView from "../views/commodities-view";
-import { AIAssistantModal } from "../ui/ai-assistant-modal";
+import { AIChatPanel } from "../ui/ai-chat-panel";
 
 export default function BloombergTerminal() {
   // Use our custom hooks for state management
@@ -70,7 +70,8 @@ export default function BloombergTerminal() {
   const [, closeConfirmModal] = useAtom(closeConfirmModalAtom);
   const [, confirmAndCloseModal] = useAtom(confirmAndCloseModalAtom);
   const [, addWatchlist] = useAtom(addWatchlistAtom);
-  const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
+  const [isAIChatOpen, setIsAIChatOpen] = useState(false);
+  const [aiChatPrompt, setAiChatPrompt] = useState("");
 
   // Use our React Query hook for market data
   const { marketData: data, refreshData, toggleRealTimeUpdates, isLoading } = useMarketDataQuery();
@@ -161,8 +162,11 @@ export default function BloombergTerminal() {
     },
     {
       key: "i",
-      action: () => setIsAIAssistantOpen(true),
-      description: "Show AI assistant",
+      action: () => {
+        setAiChatPrompt("");
+        setIsAIChatOpen(true);
+      },
+      description: "Show AI chat",
     },
     {
       key: "n",
@@ -332,13 +336,12 @@ export default function BloombergTerminal() {
         isDarkMode={isDarkMode}
       />
 
-      <AIAssistantModal
-        isOpen={isAIAssistantOpen}
-        onClose={() => setIsAIAssistantOpen(false)}
+      <AIChatPanel
+        isOpen={isAIChatOpen}
+        onClose={() => setIsAIChatOpen(false)}
+        initialPrompt={aiChatPrompt}
         currentView={currentView}
         marketData={data}
-        cryptoData={null}
-        commoditiesData={null}
         isDarkMode={isDarkMode}
       />
     </TerminalLayout>
