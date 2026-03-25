@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { bloombergColors } from "../lib/theme-config";
 import { useState, useEffect } from "react";
 import { Sparkline } from "../ui/sparkline";
+import { SwissPricesView } from "./swiss-prices-view";
 
 interface Commodity {
   id: string;
@@ -30,6 +31,7 @@ export default function CommoditiesView({ isDarkMode, onBack }: CommoditiesViewP
   const colors = isDarkMode ? bloombergColors.dark : bloombergColors.light;
   const [commodities, setCommodities] = useState<Commodity[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"global" | "swiss">("global");
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["commoditiesData"],
@@ -91,6 +93,46 @@ export default function CommoditiesView({ isDarkMode, onBack }: CommoditiesViewP
     );
   }
 
+  // If Swiss view is selected, show Swiss prices
+  if (viewMode === "swiss") {
+    return (
+      <div className="h-full flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-2 border-b border-gray-700">
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={onBack}
+              className="px-3 py-1 bg-bbg-secondary hover:bg-bbg-hover rounded text-sm"
+            >
+              ← Back
+            </button>
+            <h1 className="text-xl font-bold">SUISSE - PRIX BCV</h1>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setViewMode("global")}
+              className="px-3 py-1 bg-bbg-secondary hover:bg-bbg-hover rounded text-sm"
+            >
+              Global
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("swiss")}
+              className="px-3 py-1 bg-bbg-accent text-white rounded text-sm"
+            >
+              Suisse
+            </button>
+          </div>
+        </div>
+        <div className="flex-1 overflow-auto">
+          <SwissPricesView />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -108,13 +150,22 @@ export default function CommoditiesView({ isDarkMode, onBack }: CommoditiesViewP
             {data?.lastUpdated || new Date().toLocaleTimeString()}
           </span>
         </div>
-        <button
-          type="button"
-          onClick={handleRefresh}
-          className="px-3 py-1 bg-bbg-secondary hover:bg-bbg-hover rounded text-sm"
-        >
-          Refresh
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handleRefresh}
+            className="px-3 py-1 bg-bbg-secondary hover:bg-bbg-hover rounded text-sm"
+          >
+            Refresh
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("swiss")}
+            className="px-3 py-1 bg-green-700 hover:bg-green-600 rounded text-sm"
+          >
+            Suisse (BCV)
+          </button>
+        </div>
       </div>
 
       {/* Category Tabs */}
