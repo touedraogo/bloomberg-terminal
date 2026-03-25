@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
 
     const { messages, marketData } = validationResult.data;
 
-    // Build context from market data
+    // Build context from market data - include in user message
     let contextInfo = "";
     if (marketData && typeof marketData === "object") {
       const data = marketData as { context?: string; currentView?: string };
@@ -108,15 +108,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const systemPrompt = `You are an AI financial analyst for a Bloomberg Terminal clone.
-You provide concise, insightful commentary and answer questions about market data.${contextInfo}
-Keep responses brief, professional, and focused on financial insights.
-Never provide investment advice or make specific trading recommendations.`;
+    // Add context to the last user message or create a new one
+    const userMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+    const enhancedMessage = userMessage
+      ? { role: userMessage.role, content: userMessage.content + contextInfo }
+      : { role: "user" as const, content: contextInfo || "Hello" };
 
-    const messagesWithSystem = [
-      { role: "system", content: systemPrompt },
-      ...messages,
-    ];
+    // Filter out the last message if it was modified, then add enhanced version
+    const messagesWithoutLast = messages.slice(0, -1);
+    const allMessages = [...messagesWithoutLast, enhancedMessage];
 
     // Check API key
     if (!OPENROUTER_API_KEY) {
@@ -143,7 +143,7 @@ Never provide investment advice or make specific trading recommendations.`;
       },
       body: JSON.stringify({
         model: MODEL_NAME,
-        messages: messagesWithSystem,
+        messages: allMessages,
         max_tokens: 1000,
         temperature: 0.7,
         stream: true,
