@@ -1,7 +1,7 @@
 "use client";
 
 import { useAtom } from "jotai";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import {
   activeWatchlistAtom,
   addWatchlistAtom,
@@ -30,6 +30,7 @@ import { RmiView } from "../views/rmi-view";
 import VolatilityView from "../views/volatility-view";
 import CryptoView from "../views/crypto-view";
 import CommoditiesView from "../views/commodities-view";
+import { AIAssistantModal } from "../ui/ai-assistant-modal";
 
 export default function BloombergTerminal() {
   // Use our custom hooks for state management
@@ -69,6 +70,7 @@ export default function BloombergTerminal() {
   const [, closeConfirmModal] = useAtom(closeConfirmModalAtom);
   const [, confirmAndCloseModal] = useAtom(confirmAndCloseModalAtom);
   const [, addWatchlist] = useAtom(addWatchlistAtom);
+  const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
 
   // Use our React Query hook for market data
   const { marketData: data, refreshData, toggleRealTimeUpdates, isLoading } = useMarketDataQuery();
@@ -159,7 +161,7 @@ export default function BloombergTerminal() {
     },
     {
       key: "i",
-      action: () => {}, // AI Assistant - TODO
+      action: () => setIsAIAssistantOpen(true),
       description: "Show AI assistant",
     },
     {
@@ -328,6 +330,15 @@ export default function BloombergTerminal() {
         isOpen={isShortcutsHelpOpen}
         onClose={() => setIsShortcutsHelpOpen(false)}
         isDarkMode={isDarkMode}
+      />
+
+      <AIAssistantModal
+        isOpen={isAIAssistantOpen}
+        onClose={() => setIsAIAssistantOpen(false)}
+        currentView={currentView}
+        marketData={data}
+        cryptoData={null}
+        commoditiesData={null}
       />
     </TerminalLayout>
   );
