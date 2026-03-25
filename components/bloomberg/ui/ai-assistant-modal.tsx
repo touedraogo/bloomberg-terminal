@@ -100,16 +100,10 @@ export function AIAssistantModal({
     const prompt = getFullPrompt();
     const encodedPrompt = encodeURIComponent(prompt);
     
-    // Try ZeroClaw first (port 4096)
-    const zeroClawUrl = `http://localhost:4096/ask?prompt=${encodedPrompt}`;
+    const zeroClawUrl = `http://192.168.2.2:42617/ask?prompt=${encodedPrompt}`;
+    const deerFlowUrl = `http://192.168.2.2:2026?prompt=${encodedPrompt}`;
     
-    // Also try DeerFlow (port 2026)
-    const deerFlowUrl = `http://localhost:2026?prompt=${encodedPrompt}`;
-    
-    // Try to open ZeroClaw
     const openedWindow = window.open(zeroClawUrl, "_blank");
-    
-    // If ZeroClaw isn't available, try DeerFlow
     if (!openedWindow || openedWindow.closed) {
       window.open(deerFlowUrl, "_blank");
     }
