@@ -99,14 +99,17 @@ export async function POST(req: NextRequest) {
 
     const { messages, marketData } = validationResult.data;
 
-    // Sanitize market data
-    const sanitizedMarketData = marketData
-      ? JSON.stringify(marketData).slice(0, 5000)
-      : "{}";
+    // Build context from market data
+    let contextInfo = "";
+    if (marketData && typeof marketData === "object") {
+      const data = marketData as { context?: string; currentView?: string };
+      if (data.context) {
+        contextInfo = `\n\nMarket Data Context:\n${data.context}`;
+      }
+    }
 
     const systemPrompt = `You are an AI financial analyst for a Bloomberg Terminal clone.
-You provide concise, insightful commentary and answer questions about market data.
-Current market data context: ${sanitizedMarketData}
+You provide concise, insightful commentary and answer questions about market data.${contextInfo}
 Keep responses brief, professional, and focused on financial insights.
 Never provide investment advice or make specific trading recommendations.`;
 
