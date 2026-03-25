@@ -11,7 +11,7 @@ export const runtime = "edge";
 
 // OpenRouter configuration
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "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";
-const MODEL_NAME = "arcee-ai/trinity-large-preview:free";
+const MODEL_NAME = "google/gemma-3n-e4b-it:free";
 
 // Define validation schema for request body
 const requestSchema = z.object({
@@ -137,7 +137,7 @@ Never provide investment advice or make specific trading recommendations.`;
         messages: messagesWithSystem,
         max_tokens: 1000,
         temperature: 0.7,
-        stream: false,
+        stream: true,
       }),
     });
 
