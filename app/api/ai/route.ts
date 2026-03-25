@@ -10,7 +10,7 @@ export const maxDuration = 30;
 export const runtime = "edge";
 
 // OpenRouter configuration
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "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";
+const OPENROUTER_API_KEY = "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";
 const MODEL_NAME = "google/gemma-3n-e4b-it:free";
 
 // Define validation schema for request body
