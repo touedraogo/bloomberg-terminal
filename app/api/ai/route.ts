@@ -127,6 +127,12 @@ Never provide investment advice or make specific trading recommendations.`;
     }
 
     // Call OpenRouter API
+    console.log("=== OPENROUTER REQUEST ===");
+    console.log("API Key:", OPENROUTER_API_KEY ? OPENROUTER_API_KEY.slice(0, 20) + "..." : "MISSING");
+    console.log("Model:", MODEL_NAME);
+    console.log("Messages count:", messagesWithSystem.length);
+    console.log("First message length:", messagesWithSystem[0]?.content?.length || 0);
+    
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -143,6 +149,8 @@ Never provide investment advice or make specific trading recommendations.`;
         stream: true,
       }),
     });
+
+    console.log("Response status:", response.status);
 
     if (!response.ok) {
       const error = await response.text();
