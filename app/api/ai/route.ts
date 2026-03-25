@@ -130,8 +130,8 @@ export async function POST(req: NextRequest) {
     console.log("=== OPENROUTER REQUEST ===");
     console.log("API Key:", OPENROUTER_API_KEY ? OPENROUTER_API_KEY.slice(0, 20) + "..." : "MISSING");
     console.log("Model:", MODEL_NAME);
-    console.log("Messages count:", messagesWithSystem.length);
-    console.log("First message length:", messagesWithSystem[0]?.content?.length || 0);
+    console.log("Messages count:", allMessages.length);
+    console.log("First message length:", allMessages[0]?.content?.length || 0);
     
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: MODEL_NAME,
         messages: allMessages,
-        max_tokens: 1000,
+        max_tokens: 2000,
         temperature: 0.7,
         stream: false,
       }),
