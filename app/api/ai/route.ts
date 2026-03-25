@@ -10,7 +10,7 @@ export const maxDuration = 30;
 export const runtime = "edge";
 
 // OpenRouter configuration
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "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";
 const MODEL_NAME = "arcee-ai/trinity-large-preview:free";
 
 // Define validation schema for request body
