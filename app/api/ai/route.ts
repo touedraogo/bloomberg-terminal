@@ -9,9 +9,9 @@ export const maxDuration = 30;
 
 export const runtime = "edge";
 
-// OpenClaw configuration (bypasses OpenRouter)
-const OPENCLAW_URL = process.env.OPENCLAW_URL || "http://192.168.2.2:42617";
-const OPENCLAW_TOKEN = process.env.OPENCLAW_TOKEN || "456591315a5f2aa2a104b1ff1dc24210680fd855a11caf4e";
+// OpenRouter configuration
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "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";
+const MODEL_NAME = "google/gemma-3n-e4b-it:free";
 
 // Define validation schema for request body
 const requestSchema = z.object({
@@ -115,24 +115,35 @@ Never provide investment advice or make specific trading recommendations.`;
       ...messages,
     ];
 
-    // Call OpenClaw API (bypasses OpenRouter rate limits)
-    const response = await fetch(`${OPENCLAW_URL}/v1/chat/completions`, {
+    // Check API key
+    if (!OPENROUTER_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: "OpenRouter API key not configured" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Call OpenRouter API
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENCLAW_TOKEN}`,
+        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+        "HTTP-Referer": process.env.ALLOWED_ORIGINS?.split(",")[0] || "http://localhost:3000",
+        "X-Title": "Bloomberg Terminal",
       },
       body: JSON.stringify({
-        model: "gpt-4",
+        model: MODEL_NAME,
         messages: messagesWithSystem,
         max_tokens: 1000,
+        temperature: 0.7,
         stream: true,
       }),
     });
 
     if (!response.ok) {
       const error = await response.text();
-      console.error("OpenClaw API error:", error);
+      console.error("OpenRouter API error:", error);
       return new Response(
         JSON.stringify({ error: "Failed to generate AI response" }),
         { status: 500, headers: { "Content-Type": "application/json" } }
