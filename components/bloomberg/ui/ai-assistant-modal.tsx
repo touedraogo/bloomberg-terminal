@@ -99,8 +99,20 @@ export function AIAssistantModal({
   const handleSend = () => {
     const prompt = getFullPrompt();
     const encodedPrompt = encodeURIComponent(prompt);
+    
+    // Try ZeroClaw first (port 4096)
     const zeroClawUrl = `http://localhost:4096/ask?prompt=${encodedPrompt}`;
-    window.open(zeroClawUrl, "_blank");
+    
+    // Also try DeerFlow (port 2026)
+    const deerFlowUrl = `http://localhost:2026?prompt=${encodedPrompt}`;
+    
+    // Try to open ZeroClaw
+    const openedWindow = window.open(zeroClawUrl, "_blank");
+    
+    // If ZeroClaw isn't available, try DeerFlow
+    if (!openedWindow || openedWindow.closed) {
+      window.open(deerFlowUrl, "_blank");
+    }
   };
 
   const contextPreview = getContextForView().slice(0, 500) + (getContextForView().length > 500 ? "..." : "");
@@ -259,11 +271,10 @@ export function AIAssistantModal({
             <BloombergButton 
               color="accent" 
               onClick={handleSend}
-              disabled={mode === "context" && !customPrompt}
               className="flex items-center gap-1"
             >
               <Send className="w-3 h-3" />
-              ENVOYER A ZEROCLAW
+              ENVOYER A ZEROClAW
             </BloombergButton>
           </div>
         </div>
