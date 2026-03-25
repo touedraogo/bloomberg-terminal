@@ -108,42 +108,19 @@ export function AIChatPanel({
         }),
       });
 
-      if (!response.body) throw new Error("No response body");
+      const data = await response.json();
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let fullResponse = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed.startsWith("data:")) continue;
-          
-          const data = trimmed.slice(5).trim();
-          if (!data || data === "[DONE]") continue;
-          
-          try {
-            const parsed = JSON.parse(data);
-            if (parsed.choices?.[0]?.delta?.content) {
-              fullResponse += parsed.choices[0].delta.content;
-              setMessages((prev) => {
-                const last = prev[prev.length - 1];
-                if (last?.role === "assistant") {
-                  return [...prev.slice(0, -1), { role: "assistant", content: fullResponse }];
-                }
-                return [...prev, { role: "assistant", content: fullResponse }];
-              });
-            }
-          } catch {
-            // Skip invalid JSON
-          }
-        }
+      if (data.error) {
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: `Error: ${data.error}` },
+        ]);
+      } else {
+        const content = data.choices?.[0]?.message?.content || "No response";
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content },
+        ]);
       }
     } catch {
       setMessages((prev) => [
