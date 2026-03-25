@@ -137,6 +137,32 @@ export default function BloombergTerminal() {
   // Define keyboard shortcuts
   const shortcuts = [
     {
+      key: "k",
+      ctrlKey: true,
+      action: () => { /* Focus search - TODO */ },
+      description: "Search",
+    },
+    {
+      key: "m",
+      action: handleMarketView,
+      description: "Show market view",
+    },
+    {
+      key: "n",
+      action: handleNewsView,
+      description: "Show news view",
+    },
+    {
+      key: "w",
+      action: () => setIsWatchlistOpen(true),
+      description: "Show watchlist",
+    },
+    {
+      key: "i",
+      action: () => {}, // AI Assistant - TODO
+      description: "Show AI assistant",
+    },
+    {
       key: "n",
       ctrlKey: true,
       action: handleNewWatchlist,

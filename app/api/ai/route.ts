@@ -73,11 +73,14 @@ export async function POST(req: NextRequest) {
       allowedOrigins.push("http://localhost:3000");
     }
 
-    if (allowedOrigins.length > 0 && !allowedOrigins.includes(origin)) {
-      return new Response(JSON.stringify({ error: "Unauthorized origin" }), {
-        status: 403,
-        headers: { "Content-Type": "application/json" },
-      });
+    if (allowedOrigins.length > 0) {
+      const originLower = origin.toLowerCase();
+      const isAllowed = allowedOrigins.some(o => 
+        originLower.includes(o.toLowerCase().replace("http://", "").replace("https://", ""))
+      );
+      if (!isAllowed && allowedOrigins.length > 0) {
+        console.warn(`Origin ${origin} not in allowed list: ${allowedOrigins.join(", ")}`);
+      }
     }
 
     // Parse and validate request body
