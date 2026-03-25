@@ -1,136 +1,122 @@
-import { redis } from "@/lib/redis";
 import { NextResponse } from "next/server";
 
-const ALPHA_VANTAGE_KEY = process.env.ALPHA_VANTAGE_API_KEY || "";
+// Stooq - Free, public data with ~5 min delay
+// https://stooq.com
 
-// Market indices via ETFs (closest to actual indices)
-const INDICES = {
-  americas: [
-    { id: "DOW JONES", etf: "DIA", name: "Dow Jones Industrial" },
-    { id: "S&P 500", etf: "SPY", name: "S&P 500" },
-    { id: "NASDAQ", etf: "QQQ", name: "NASDAQ 100" },
-    { id: "S&P/TSX Comp", etf: "XIU.TO", name: "S&P/TSX Composite" },
-    { id: "IBOVESPA", etf: "EWZ", name: "Brazil Bovespa" },
-  ],
-  emea: [
-    { id: "Euro Stoxx 50", etf: "FEZ", name: "Euro Stoxx 50" },
-    { id: "FTSE 100", etf: "ISF.L", name: "FTSE 100" },
-    { id: "CAC 40", etf: "CC.F", name: "CAC 40" },
-    { id: "DAX", etf: "DAX", name: "DAX 40" },
-    { id: "SWISS MKT", etf: "EWL", name: "Swiss Market" },
-  ],
-  asiaPacific: [
-    { id: "NIKKEI", etf: "NHK", name: "Nikkei 225" },
-    { id: "HANG SENG", etf: "EWJ", name: "Hang Seng" },
-    { id: "CSI 300", etf: "CHIX", name: "CSI 300" },
-    { id: "S&P/ASX 200", etf: "AUD", name: "ASX 200" },
-  ],
-};
+interface IndexData {
+  id: string;
+  name: string;
+  value: number;
+  change: number;
+  pctChange: number;
+  time: string;
+}
 
-// Cache for 5 minutes
-let cachedMarketData: any = null;
-let cacheTimestamp = 0;
-const CACHE_DURATION = 5 * 60 * 1000;
-
-async function fetchQuote(symbol: string): Promise<any> {
+// Get index data from Stooq
+async function fetchIndex(symbol: string): Promise<IndexData | null> {
   try {
-    const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${ALPHA_VANTAGE_KEY}`;
-    const response = await fetch(url, { next: { revalidate: 300 } });
-    const data = await response.json();
-    return data["Global Quote"] || null;
+    const response = await fetch(`https://stooq.com/q/d/l/?s=${symbol}&i=d`, {
+      next: { revalidate: 300 } // 5 min cache
+    });
+    const text = await response.text();
+    const lines = text.trim().split("\n");
+    
+    if (lines.length < 2) return null;
+    
+    // Last row is most recent data
+    const lastRow = lines[lines.length - 1];
+    const prevRow = lines[lines.length - 2];
+    
+    const [date, open, high, low, close, volume] = lastRow.split(",");
+    const [, , , , prevClose] = prevRow.split(",");
+    
+    const closeVal = parseFloat(close);
+    const prevVal = parseFloat(prevClose);
+    const change = closeVal - prevVal;
+    const pctChange = (change / prevVal) * 100;
+    
+    return {
+      id: symbol.toUpperCase(),
+      value: closeVal,
+      change: Number(change.toFixed(2)),
+      pctChange: Number(pctChange.toFixed(2)),
+      time: date,
+    };
   } catch (error) {
     console.error(`Error fetching ${symbol}:`, error);
     return null;
   }
 }
 
-function generateSparkline(): number[] {
-  const points: number[] = [];
-  let value = 0.5;
-  for (let i = 0; i < 20; i++) {
-    value += (Math.random() - 0.5) * 0.1;
-    value = Math.max(0, Math.min(1, value));
-    points.push(value);
-  }
-  return points;
-}
-
 export async function GET() {
   try {
-    // Check cache
-    if (cachedMarketData && Date.now() - cacheTimestamp < CACHE_DURATION) {
-      return NextResponse.json({
-        ...cachedMarketData,
-        fromCache: true,
-      });
-    }
+    // Fetch all indices in parallel
+    const symbols = {
+      americas: [
+        { id: "^DJI", name: "Dow Jones" },
+        { id: "^SPX", name: "S&P 500" },
+        { id: "^NDX", name: "NASDAQ 100" },
+        { id: "^GSPTSE", name: "S&P/TSX" },
+        { id: "^BVSP", name: "IBOVESPA" },
+      ],
+      emea: [
+        { id: "^STOXX50E", name: "Euro Stoxx 50" },
+        { id: "^FTSE", name: "FTSE 100" },
+        { id: "^FCHI", name: "CAC 40" },
+        { id: "^GDAXI", name: "DAX" },
+        { id: "^SSMI", name: "Swiss Mkt" },
+      ],
+      asiaPacific: [
+        { id: "^N225", name: "Nikkei" },
+        { id: "^HSI", name: "Hang Seng" },
+        { id: "cnx.nse", name: "CSI 300" },
+        { id: "^AXJO", name: "ASX 200" },
+      ],
+    };
 
     const result: any = {
       americas: [],
       emea: [],
       asiaPacific: [],
       lastUpdated: new Date().toISOString(),
-      source: "Alpha Vantage (Real-time)",
+      source: "Stooq (Public, ~5 min delay)",
     };
 
     // Fetch all indices
-    for (const region of Object.keys(INDICES)) {
-      for (const index of INDICES[region as keyof typeof INDICES]) {
-        const quote = await fetchQuote(index.etf);
-        
-        if (quote && quote["05. price"]) {
-          const price = parseFloat(quote["05. price"]);
-          const change = parseFloat(quote["09. change"]);
-          const changePercent = parseFloat(quote["10. change percent"].replace("%", ""));
-          
-          result[region].push({
-            id: index.id,
-            name: index.name,
-            num: `${result[region].length + 11})`,
-            value: price,
-            change: change,
-            pctChange: changePercent,
-            avat: 0,
-            time: quote["07. latest trading day"],
-            ytd: 0,
-            ytdCur: 0,
-            sparkline1: generateSparkline(),
-            sparkline2: generateSparkline(),
-          });
-        }
-        
-        // Rate limit - wait between requests
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-    }
+    const promises = Object.entries(symbols).map(async ([region, indices]) => {
+      const results = await Promise.all(
+        indices.map(async (idx, i) => {
+          const data = await fetchIndex(idx.id);
+          if (data) {
+            return {
+              id: idx.name,
+              num: `${i + 11})`,
+              value: data.value,
+              change: data.change,
+              pctChange: data.pctChange,
+              avat: 0,
+              time: data.time,
+              ytd: 0,
+              ytdCur: 0,
+              sparkline1: Array(20).fill(0.5),
+              sparkline2: Array(20).fill(0.5),
+            };
+          }
+          return null;
+        })
+      );
+      return { region, data: results.filter(Boolean) };
+    });
 
-    // Update cache
-    cachedMarketData = result;
-    cacheTimestamp = Date.now();
-
-    // Try to store in Redis
-    try {
-      await redis.set("market_data", result, { ex: 300 });
-    } catch (e) {
-      console.warn("Redis not available, continuing without cache");
+    const allResults = await Promise.all(promises);
+    
+    for (const { region, data } of allResults) {
+      result[region] = data;
     }
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Error in market-data GET:", error);
-    
-    // Try Redis cache as fallback
-    try {
-      const cached = await redis.get("market_data");
-      if (cached) {
-        return NextResponse.json({
-          ...cached,
-          fromCache: true,
-          error: "Using cached data due to API error",
-        });
-      }
-    } catch (e) {}
-    
+    console.error("Error in market-data:", error);
     return NextResponse.json(
       { error: "Failed to fetch market data" },
       { status: 500 }
