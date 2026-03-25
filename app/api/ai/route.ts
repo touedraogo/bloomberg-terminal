@@ -1,6 +1,5 @@
-import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
-import { type CoreMessage, Message } from "ai";
+import { type CoreMessage } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { rateLimit } from "./rate-limit";
@@ -9,6 +8,10 @@ import { rateLimit } from "./rate-limit";
 export const maxDuration = 30;
 
 export const runtime = "edge";
+
+// OpenRouter configuration
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const MODEL_NAME = "arcee-ai/trinity-large-preview:free";
 
 // Define validation schema for request body
 const requestSchema = z.object({
@@ -19,7 +22,7 @@ const requestSchema = z.object({
         content: z.string().max(4000),
       })
     )
-    .max(20), // Limit number of messages
+    .max(20),
   marketData: z.record(z.any()).optional(),
 });
 
@@ -27,11 +30,10 @@ export async function POST(req: NextRequest) {
   try {
     // Check rate limits first
     const rateLimitResult = await rateLimit(req, {
-      maxRequests: 20, // 20 requests per minute per IP
+      maxRequests: 20,
       windowInSeconds: 60,
     });
 
-    // If rate limit exceeded, return 429 Too Many Requests
     if (!rateLimitResult.success) {
       return new Response(
         JSON.stringify({
@@ -54,14 +56,12 @@ export async function POST(req: NextRequest) {
     const origin = req.headers.get("origin") || "";
 
     // Get allowed origins from environment variable
-    // Format: comma-separated list of domains (e.g., "https://domain1.com,https://domain2.com")
     const allowedOriginsEnv = process.env.ALLOWED_ORIGINS || "";
     const allowedOrigins = allowedOriginsEnv
       .split(",")
       .map((origin) => origin.trim())
       .filter(Boolean);
 
-    // Always allow production URL if specified
     if (process.env.VERCEL_URL) {
       const vercelUrl = `https://${process.env.VERCEL_URL}`;
       if (!allowedOrigins.includes(vercelUrl)) {
@@ -69,12 +69,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // In development, also allow localhost origins if no origins are specified
     if (process.env.NODE_ENV === "development" && allowedOrigins.length === 0) {
       allowedOrigins.push("http://localhost:3000");
     }
 
-    // Skip origin check if no allowed origins are specified (not recommended for production)
     if (allowedOrigins.length > 0 && !allowedOrigins.includes(origin)) {
       return new Response(JSON.stringify({ error: "Unauthorized origin" }), {
         status: 403,
@@ -98,11 +96,10 @@ export async function POST(req: NextRequest) {
 
     const { messages, marketData } = validationResult.data;
 
-    // Sanitize market data to prevent injection
+    // Sanitize market data
     const sanitizedMarketData = marketData
       ? JSON.stringify(marketData).slice(0, 5000)
-      : // Limit size
-        "{}";
+      : "{}";
 
     const systemPrompt = `You are an AI financial analyst for a Bloomberg Terminal clone.
 You provide concise, insightful commentary and answer questions about market data.
@@ -110,27 +107,55 @@ Current market data context: ${sanitizedMarketData}
 Keep responses brief, professional, and focused on financial insights.
 Never provide investment advice or make specific trading recommendations.`;
 
-    // Prepend the system message to the messages array and ensure correct typing
-    const messagesWithSystem: CoreMessage[] = [
-      { role: "system", content: systemPrompt } as CoreMessage,
-      ...messages.map((m) => ({ role: m.role, content: m.content }) as CoreMessage),
+    const messagesWithSystem = [
+      { role: "system", content: systemPrompt },
+      ...messages,
     ];
 
-    // Use the AI SDK to stream text with strict limits
-    const result = streamText({
-      model: openai("gpt-4"),
-      messages: messagesWithSystem,
-      temperature: 0.7,
-      maxTokens: 500, // Strict token limit
+    // Check API key
+    if (!OPENROUTER_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: "OpenRouter API key not configured" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Call OpenRouter API directly
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+        "HTTP-Referer": process.env.ALLOWED_ORIGINS?.split(",")[0] || "http://localhost:3000",
+        "X-Title": "Bloomberg Terminal",
+      },
+      body: JSON.stringify({
+        model: MODEL_NAME,
+        messages: messagesWithSystem,
+        max_tokens: 500,
+        temperature: 0.7,
+        stream: true,
+      }),
     });
 
-    // Return the stream with rate limit headers
-    const response = result.toDataStreamResponse();
-    response.headers.set("X-RateLimit-Limit", rateLimitResult.limit.toString());
-    response.headers.set("X-RateLimit-Remaining", rateLimitResult.remaining.toString());
-    response.headers.set("X-RateLimit-Reset", rateLimitResult.reset.toString());
+    if (!response.ok) {
+      const error = await response.text();
+      console.error("OpenRouter API error:", error);
+      return new Response(
+        JSON.stringify({ error: "Failed to generate AI response" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
-    return response;
+    // Return streaming response
+    return new Response(response.body, {
+      headers: {
+        "Content-Type": "text/plain",
+        "X-RateLimit-Limit": rateLimitResult.limit.toString(),
+        "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
+        "X-RateLimit-Reset": rateLimitResult.reset.toString(),
+      },
+    });
   } catch (error) {
     console.error("AI API error:", error);
     return new Response(JSON.stringify({ error: "Failed to generate AI response" }), {
