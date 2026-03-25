@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { bloombergColors } from "../lib/theme-config";
-import { X, Send, ChevronDown } from "lucide-react";
+import { BloombergButton } from "../core/bloomberg-button";
+import { X, Send, Bot } from "lucide-react";
 
 interface AIAssistantModalProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface AIAssistantModalProps {
   marketData: any;
   cryptoData: any;
   commoditiesData: any;
+  isDarkMode: boolean;
 }
 
 export function AIAssistantModal({
@@ -20,9 +22,28 @@ export function AIAssistantModal({
   marketData,
   cryptoData,
   commoditiesData,
+  isDarkMode,
 }: AIAssistantModalProps) {
   const [mode, setMode] = useState<"context" | "free">("context");
   const [customPrompt, setCustomPrompt] = useState("");
+  const modalRef = useRef<HTMLDivElement>(null);
+  const colors = isDarkMode ? bloombergColors.dark : bloombergColors.light;
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (isOpen && modalRef.current) {
+      modalRef.current.focus();
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -31,38 +52,37 @@ export function AIAssistantModal({
     let context = `Bloomberg Terminal - ${currentView.toUpperCase()} - ${timestamp}\n\n`;
 
     if (currentView === "market" && marketData) {
-      context += "📊 MARKET OVERVIEW:\n";
+      context += "MARKET OVERVIEW:\n";
       ["americas", "emea", "asiaPacific"].forEach((region) => {
         const items = marketData[region] || [];
         if (items.length > 0) {
           context += `\n${region.toUpperCase()}:\n`;
           items.slice(0, 5).forEach((item: any) => {
             const change = item.pctChange >= 0 ? `+${item.pctChange}` : item.pctChange;
-            context += `• ${item.id}: ${item.value?.toLocaleString()} (${change}%)\n`;
+            context += `  ${item.id}: ${item.value?.toLocaleString()} (${change}%)\n`;
           });
         }
       });
     }
 
     if (currentView === "crypto" && cryptoData?.assets) {
-      context += "💰 CRYPTO ASSETS:\n";
+      context += "CRYPTO ASSETS:\n";
       cryptoData.assets.slice(0, 10).forEach((asset: any) => {
         const change = asset.changePct24h >= 0 ? `+${asset.changePct24h}` : asset.changePct24h;
-        context += `• ${asset.symbol}: $${asset.price?.toLocaleString()} (${change}%)\n`;
+        context += `  ${asset.symbol}: $${asset.price?.toLocaleString()} (${change}%)\n`;
       });
     }
 
     if (currentView === "commodities" && commoditiesData?.commodities) {
-      context += "📈 COMMODITIES:\n";
+      context += "COMMODITIES:\n";
       commoditiesData.commodities.slice(0, 8).forEach((c: any) => {
         const change = c.changePct24h >= 0 ? `+${c.changePct24h}` : c.changePct24h;
-        context += `• ${c.name}: $${c.price?.toLocaleString()}/oz (${change}%)\n`;
+        context += `  ${c.name}: $${c.price?.toLocaleString()}/oz (${change}%)\n`;
       });
     }
 
     if (currentView === "news") {
-      context += "📰 LATEST NEWS:\n";
-      context += "(See news view for recent headlines)\n";
+      context += "LATEST NEWS:\n(Consult the news view for recent headlines)\n";
     }
 
     return context;
@@ -72,174 +92,182 @@ export function AIAssistantModal({
     if (mode === "free") {
       return customPrompt;
     }
-
     const context = getContextForView();
     return `${context}\n\n---\n\nUser request: ${customPrompt || "Analyse this data and provide insights."}`;
   };
 
   const handleSend = () => {
     const prompt = getFullPrompt();
-    
-    // Encode for URL
     const encodedPrompt = encodeURIComponent(prompt);
-    
-    // Try to open ZeroClaw/Hermes via deep link
-    // This will work if the agent supports deep links
-    const deepLink = `zeroclaw://ask?prompt=${encodedPrompt}`;
-    
-    // Also try HTTP to local agent
-    const localAgentUrl = `http://localhost:8081/chat`;
-    
-    // Try ZeroClaw (default port 4096)
     const zeroClawUrl = `http://localhost:4096/ask?prompt=${encodedPrompt}`;
-    
-    // Open the most likely agent
     window.open(zeroClawUrl, "_blank");
   };
 
   const contextPreview = getContextForView().slice(0, 500) + (getContextForView().length > 500 ? "..." : "");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
-      <div 
-        className="w-full max-w-2xl max-h-[80vh] rounded-lg shadow-2xl flex flex-col"
-        style={{ backgroundColor: "#1a1a1a" }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🤖</span>
-            <h2 className="text-lg font-bold">AI ASSISTANT</h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-700 rounded"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <dialog
+      open={true}
+      className="fixed inset-0 z-50 w-full h-full p-0 m-0 max-w-none max-h-none border-none bg-transparent overflow-hidden"
+      onClick={onClose}
+      onKeyDown={(e) => e.key === "Escape" && onClose()}
+    >
+      <div className="absolute inset-0 bg-black/70" aria-hidden="true" />
 
-        {/* Mode Toggle */}
-        <div className="px-4 py-3 border-b border-gray-700">
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2 cursor-pointer">
+      <div className="relative w-full h-full flex items-center justify-center">
+        <div
+          ref={modalRef}
+          className="w-[600px] max-h-[80vh] border-2 shadow-lg flex flex-col rounded-sm"
+          style={{
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            color: colors.text,
+          }}
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+          tabIndex={-1}
+        >
+          <div 
+            className="flex items-center justify-between px-4 py-3 border-b"
+            style={{ borderColor: colors.border, backgroundColor: colors.header }}
+          >
+            <div className="flex items-center gap-2">
+              <Bot className="w-5 h-5 text-orange-500" />
+              <h2 className="text-sm font-bold">AI ASSISTANT</h2>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-1 hover:bg-gray-700 rounded"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div 
+            className="flex gap-4 px-4 py-3 border-b"
+            style={{ borderColor: colors.border }}
+          >
+            <label className="flex items-center gap-2 cursor-pointer text-sm">
               <input
                 type="radio"
-                name="mode"
+                name="aimode"
                 checked={mode === "context"}
                 onChange={() => setMode("context")}
-                className="accent-green-500"
+                className="accent-orange-500"
               />
-              <span className="text-sm">Avec Contexte</span>
+              <span>Avec Contexte</span>
             </label>
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label className="flex items-center gap-2 cursor-pointer text-sm">
               <input
                 type="radio"
-                name="mode"
+                name="aimode"
                 checked={mode === "free"}
                 onChange={() => setMode("free")}
-                className="accent-green-500"
+                className="accent-orange-500"
               />
-              <span className="text-sm">Libre</span>
+              <span>Libre</span>
             </label>
           </div>
-        </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-auto p-4">
-          {mode === "context" && (
-            <div className="mb-4">
-              <label className="block text-sm font-bold mb-2 text-gray-400">
-                Contexte actuel:
-              </label>
-              <div 
-                className="p-3 rounded text-xs font-mono overflow-auto max-h-48"
-                style={{ backgroundColor: "#0a0a0a" }}
-              >
-                <pre className="whitespace-pre-wrap">{contextPreview}</pre>
-              </div>
-            </div>
-          )}
-
-          <div className="mb-4">
-            <label className="block text-sm font-bold mb-2 text-gray-400">
-              Votre question:
-            </label>
-            <textarea
-              value={customPrompt}
-              onChange={(e) => setCustomPrompt(e.target.value)}
-              placeholder={
-                mode === "context"
-                  ? "Que pensez-vous de cette tendance? Analyse les données..."
-                  : "Posez votre question à l'agent IA..."
-              }
-              className="w-full p-3 rounded text-sm font-mono h-32 resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
-              style={{ backgroundColor: "#0a0a0a" }}
-            />
-          </div>
-
-          {/* Quick prompts */}
-          <div className="flex flex-wrap gap-2">
-            <span className="text-xs text-gray-500">Suggestions:</span>
+          <div className="flex-1 overflow-auto p-4">
             {mode === "context" && (
-              <>
-                <button
-                  onClick={() => setCustomPrompt("Analyse la tendance générale du marché.")}
-                  className="px-2 py-1 text-xs bg-gray-700 rounded hover:bg-gray-600"
+              <div className="mb-4">
+                <label className="block text-xs font-bold mb-2" style={{ color: colors.textSecondary }}>
+                  Contexte actuel:
+                </label>
+                <div 
+                  className="p-3 rounded text-xs font-mono overflow-auto max-h-48"
+                  style={{ backgroundColor: colors.background, color: colors.text }}
                 >
-                  Analyse marché
-                </button>
-                <button
-                  onClick={() => setCustomPrompt("Quel est le meilleur investissement actuellement?")}
-                  className="px-2 py-1 text-xs bg-gray-700 rounded hover:bg-gray-600"
-                >
-                  Recommandation
-                </button>
-                <button
-                  onClick={() => setCustomPrompt("Explique les mouvements du jour.")}
-                  className="px-2 py-1 text-xs bg-gray-700 rounded hover:bg-gray-600"
-                >
-                  Mouvements
-                </button>
-              </>
+                  <pre className="whitespace-pre-wrap">{contextPreview}</pre>
+                </div>
+              </div>
             )}
-            {mode === "free" && (
-              <>
-                <button
-                  onClick={() => setCustomPrompt("Explain cryptocurrency to a beginner.")}
-                  className="px-2 py-1 text-xs bg-gray-700 rounded hover:bg-gray-600"
-                >
-                  Crypto basics
-                </button>
-                <button
-                  onClick={() => setCustomPrompt("What is dollar-cost averaging?")}
-                  className="px-2 py-1 text-xs bg-gray-700 rounded hover:bg-gray-600"
-                >
-                  DCA strategy
-                </button>
-              </>
-            )}
-          </div>
-        </div>
 
-        {/* Footer */}
-        <div className="px-4 py-3 border-t border-gray-700 flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm bg-gray-700 rounded hover:bg-gray-600"
+            <div className="mb-4">
+              <label className="block text-xs font-bold mb-2" style={{ color: colors.textSecondary }}>
+                Votre question:
+              </label>
+              <textarea
+                value={customPrompt}
+                onChange={(e) => setCustomPrompt(e.target.value)}
+                placeholder={
+                  mode === "context"
+                    ? "Que pensez-vous de cette tendance? Analyse les données..."
+                    : "Posez votre question à l'agent IA..."
+                }
+                className="w-full p-3 rounded text-sm font-mono h-32 resize-none focus:outline-none focus:ring-2 focus:ring-orange-500"
+                style={{ backgroundColor: colors.background, color: colors.text }}
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <span className="text-xs" style={{ color: colors.textSecondary }}>Suggestions:</span>
+              {mode === "context" ? (
+                <>
+                  <button
+                    onClick={() => setCustomPrompt("Analyse la tendance generale du marche.")}
+                    className="px-2 py-1 text-xs rounded"
+                    style={{ backgroundColor: colors.border, color: colors.text }}
+                  >
+                    Analyse marche
+                  </button>
+                  <button
+                    onClick={() => setCustomPrompt("Quel est le meilleur investissement actuellement?")}
+                    className="px-2 py-1 text-xs rounded"
+                    style={{ backgroundColor: colors.border, color: colors.text }}
+                  >
+                    Recommandation
+                  </button>
+                  <button
+                    onClick={() => setCustomPrompt("Explique les mouvements du jour.")}
+                    className="px-2 py-1 text-xs rounded"
+                    style={{ backgroundColor: colors.border, color: colors.text }}
+                  >
+                    Mouvements
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => setCustomPrompt("Explain cryptocurrency to a beginner.")}
+                    className="px-2 py-1 text-xs rounded"
+                    style={{ backgroundColor: colors.border, color: colors.text }}
+                  >
+                    Crypto basics
+                  </button>
+                  <button
+                    onClick={() => setCustomPrompt("What is dollar-cost averaging?")}
+                    className="px-2 py-1 text-xs rounded"
+                    style={{ backgroundColor: colors.border, color: colors.text }}
+                  >
+                    DCA strategy
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div 
+            className="px-4 py-3 border-t flex justify-end gap-2"
+            style={{ borderColor: colors.border }}
           >
-            Annuler
-          </button>
-          <button
-            onClick={handleSend}
-            disabled={mode === "context" && !customPrompt}
-            className="px-4 py-2 text-sm bg-green-700 rounded hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            <Send className="w-4 h-4" />
-            Envoyer à ZeroClaw
-          </button>
+            <BloombergButton color="default" onClick={onClose}>
+              ANNULER
+            </BloombergButton>
+            <BloombergButton 
+              color="accent" 
+              onClick={handleSend}
+              disabled={mode === "context" && !customPrompt}
+              className="flex items-center gap-1"
+            >
+              <Send className="w-3 h-3" />
+              ENVOYER A ZEROCLAW
+            </BloombergButton>
+          </div>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }

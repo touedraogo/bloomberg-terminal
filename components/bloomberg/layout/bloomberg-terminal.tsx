@@ -339,6 +339,7 @@ export default function BloombergTerminal() {
         marketData={data}
         cryptoData={null}
         commoditiesData={null}
+        isDarkMode={isDarkMode}
       />
     </TerminalLayout>
   );
