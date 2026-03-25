@@ -147,21 +147,25 @@ export default function BloombergTerminal() {
     },
     {
       key: "m",
+      ctrlKey: true,
       action: handleMarketView,
       description: "Show market view",
     },
     {
       key: "n",
+      ctrlKey: true,
       action: handleNewsView,
       description: "Show news view",
     },
     {
       key: "w",
+      ctrlKey: true,
       action: () => setIsWatchlistOpen(true),
       description: "Show watchlist",
     },
     {
       key: "i",
+      ctrlKey: true,
       action: () => {
         setAiChatPrompt("");
         setIsAIChatOpen(true);
@@ -169,8 +173,7 @@ export default function BloombergTerminal() {
       description: "Show AI chat",
     },
     {
-      key: "n",
-      ctrlKey: true,
+      key: "w",
       action: handleNewWatchlist,
       description: "Create new watchlist",
     },

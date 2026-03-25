@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { bloombergColors } from "../lib/theme-config";
 import { BloombergButton } from "../core/bloomberg-button";
-import { X, Bot, Send, Loader2 } from "lucide-react";
+import { X, Bot, Send, Loader2, Eye, Edit3 } from "lucide-react";
 
 interface AIChatPanelProps {
   isOpen: boolean;
@@ -26,6 +26,7 @@ export function AIChatPanel({
   const [input, setInput] = useState(initialPrompt || "");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<"context" | "free">("context");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const colors = isDarkMode ? bloombergColors.dark : bloombergColors.light;
 
@@ -44,16 +45,17 @@ export function AIChatPanel({
 
     if (currentView === "market" && marketData) {
       context += "MARKET OVERVIEW:\n";
-      ["americas", "emea", "asiaPacific"].forEach((region) => {
+      const regions = ["americas", "emea", "asiaPacific"];
+      for (const region of regions) {
         const items = marketData[region] || [];
         if (items.length > 0) {
           context += `${region.toUpperCase()}:\n`;
-          items.slice(0, 5).forEach((item: any) => {
+          for (const item of items.slice(0, 5)) {
             const change = item.pctChange >= 0 ? `+${item.pctChange}` : item.pctChange;
             context += `  ${item.id}: ${item.value?.toLocaleString()} (${change}%)\n`;
-          });
+          }
         }
-      });
+      }
     }
 
     return context;
@@ -69,27 +71,69 @@ export function AIChatPanel({
     setError(null);
 
     try {
-      const response = await fetch("/api/deerflow", {
+      const response = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: userMessage,
-          context: getContextForView(),
+          messages: [
+            { role: "user", content: userMessage }
+          ],
+          marketData: mode === "context" ? {
+            context: getContextForView(),
+            currentView: currentView
+          } : undefined,
         }),
       });
 
-      const data = await response.json();
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("No response body");
+      }
 
-      if (data.error) {
-        setError(data.error);
+      let fullResponse = "";
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.slice(6);
+            if (data === "[DONE]") continue;
+
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.choices?.[0]?.delta?.content) {
+                fullResponse += parsed.choices[0].delta.content;
+              }
+            } catch {
+              // Skip invalid JSON chunks
+            }
+          }
+        }
+      }
+
+      if (fullResponse) {
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: fullResponse },
+        ]);
       } else {
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: data.response || "No response received" },
+          { role: "assistant", content: "No response received" },
         ]);
       }
     } catch (err) {
-      setError("Failed to connect to DeerFlow agent");
+      setError("Failed to get AI response");
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Failed to get AI response" },
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -103,6 +147,8 @@ export function AIChatPanel({
   };
 
   if (!isOpen) return null;
+
+  const contextPreview = getContextForView().slice(0, 300);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -123,34 +169,70 @@ export function AIChatPanel({
         >
           <div className="flex items-center gap-2">
             <Bot className="w-5 h-5 text-orange-500" />
-            <h2 className="text-sm font-bold">AI ASSISTANT (DeerFlow)</h2>
+            <h2 className="text-sm font-bold">AI ASSISTANT</h2>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-gray-700 rounded">
             <X className="w-4 h-4" />
           </button>
         </div>
 
+        {/* Mode Selection */}
+        <div
+          className="flex gap-4 px-4 py-2 border-b"
+          style={{ borderColor: colors.border }}
+        >
+          <label className="flex items-center gap-2 cursor-pointer text-sm">
+            <input
+              type="radio"
+              name="aimode"
+              checked={mode === "context"}
+              onChange={() => setMode("context")}
+              className="accent-orange-500"
+            />
+            <Eye className="w-4 h-4" />
+            <span>Avec Contexte</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer text-sm">
+            <input
+              type="radio"
+              name="aimode"
+              checked={mode === "free"}
+              onChange={() => setMode("free")}
+              className="accent-orange-500"
+            />
+            <Edit3 className="w-4 h-4" />
+            <span>Libre</span>
+          </label>
+        </div>
+
+        {/* Context Preview */}
+        {mode === "context" && (
+          <div
+            className="px-4 py-2 border-b text-xs font-mono overflow-auto"
+            style={{ borderColor: colors.border, backgroundColor: colors.background, maxHeight: "80px" }}
+          >
+            <div className="text-gray-500 mb-1">Contexte:</div>
+            <pre className="whitespace-pre-wrap">{contextPreview}...</pre>
+          </div>
+        )}
+
         {/* Messages */}
         <div className="flex-1 overflow-auto p-4">
           {messages.length === 0 && !isLoading && (
             <div className="text-center text-sm" style={{ color: colors.textSecondary }}>
-              Ask me anything about the market data. Press Enter to send.
+              {mode === "context" 
+                ? "Le contexte du marché actuel sera inclus automatiquement. Posez votre question."
+                : "Posez votre question librement."}
             </div>
           )}
           
           {messages.map((msg, idx) => (
             <div
               key={idx}
-              className={`mb-4 ${
-                msg.role === "user" ? "text-right" : "text-left"
-              }`}
+              className={`mb-4 ${msg.role === "user" ? "text-right" : "text-left"}`}
             >
               <div
-                className={`inline-block max-w-[80%] px-4 py-2 rounded text-sm ${
-                  msg.role === "user"
-                    ? "text-left"
-                    : "text-left"
-                }`}
+                className="inline-block max-w-[80%] px-4 py-2 rounded text-sm"
                 style={{
                   backgroundColor:
                     msg.role === "user" ? colors.accent : colors.background,
@@ -158,7 +240,7 @@ export function AIChatPanel({
                 }}
               >
                 <div className="font-bold text-xs mb-1">
-                  {msg.role === "user" ? "YOU" : "DEERFLOW"}
+                  {msg.role === "user" ? "YOU" : "AI"}
                 </div>
                 <div className="whitespace-pre-wrap">{msg.content}</div>
               </div>
@@ -168,12 +250,8 @@ export function AIChatPanel({
           {isLoading && (
             <div className="flex items-center gap-2 text-sm" style={{ color: colors.textSecondary }}>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>DeerFlow is thinking...</span>
+              <span>L'IA analyse...</span>
             </div>
-          )}
-
-          {error && (
-            <div className="text-red-500 text-sm">Error: {error}</div>
           )}
           
           <div ref={messagesEndRef} />
@@ -189,7 +267,9 @@ export function AIChatPanel({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask about the market data..."
+              placeholder={mode === "context" 
+                ? "Que pensez-vous de cette tendance? Analyse les données..." 
+                : "Posez votre question librement..."}
               className="flex-1 p-3 rounded text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-500"
               style={{ backgroundColor: colors.background, color: colors.text }}
               rows={2}
