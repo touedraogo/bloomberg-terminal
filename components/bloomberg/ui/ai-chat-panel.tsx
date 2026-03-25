@@ -117,17 +117,19 @@ export function AIChatPanel({
         const lines = chunk.split("\n");
 
         for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.slice(6);
-            if (data === "[DONE]") continue;
-            try {
-              const parsed = JSON.parse(data);
-              if (parsed.choices?.[0]?.delta?.content) {
-                fullResponse += parsed.choices[0].delta.content;
-              }
-            } catch {
-              // Skip invalid JSON
+          const trimmed = line.trim();
+          if (!trimmed.startsWith("data:")) continue;
+          
+          const data = trimmed.slice(5).trim();
+          if (!data || data === "[DONE]") continue;
+          
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.choices?.[0]?.delta?.content) {
+              fullResponse += parsed.choices[0].delta.content;
             }
+          } catch {
+            // Skip invalid JSON
           }
         }
       }
