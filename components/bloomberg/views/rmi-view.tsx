@@ -71,6 +71,13 @@ export function RmiView() {
     // If currentBenchmarkIsValid is true, benchmarkIndex is already fine.
   }, [selectedSecurity, securities, benchmarkIndex, setBenchmarkIndex]);
 
+  // Initialize selectedSecurity when securities load
+  useEffect(() => {
+    if (!selectedSecurity && securities.length > 0) {
+      setSelectedSecurity(securities[0].id);
+    }
+  }, [selectedSecurity, securities, setSelectedSecurity]);
+
   // Handle back button click
   const handleBack = () => {
     setCurrentView("market");
@@ -102,10 +109,6 @@ export function RmiView() {
   }
 
   // Get all available securities for the selected region
-  // If no security is selected yet, select the first one
-  if (!selectedSecurity && securities.length > 0) {
-    setSelectedSecurity(securities[0].id);
-  }
 
   // Find the selected security and benchmark
   const selectedSecurityData = securities.find((item: MarketItem) => item.id === selectedSecurity);
