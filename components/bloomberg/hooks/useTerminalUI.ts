@@ -38,6 +38,10 @@ export function useTerminalUI() {
     setCurrentView("crypto");
   }, [setCurrentView]);
 
+  const handleCommoditiesView = useCallback(() => {
+    setCurrentView("commodities");
+  }, [setCurrentView]);
+
   // Other UI handlers
   const handleCancelClick = useCallback(() => {
     console.log("Cancel clicked");
@@ -83,6 +87,7 @@ export function useTerminalUI() {
     handleVolatilityView,
     handleRmiView,
     handleCryptoView,
+    handleCommoditiesView,
     handleCancelClick,
     handleNewClick,
     handleBlancClick,

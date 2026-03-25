@@ -29,6 +29,7 @@ import NewsView from "../views/news-view";
 import { RmiView } from "../views/rmi-view";
 import VolatilityView from "../views/volatility-view";
 import CryptoView from "../views/crypto-view";
+import CommoditiesView from "../views/commodities-view";
 
 export default function BloombergTerminal() {
   // Use our custom hooks for state management
@@ -47,6 +48,7 @@ export default function BloombergTerminal() {
     handleVolatilityView,
     handleRmiView,
     handleCryptoView,
+    handleCommoditiesView,
     handleCancelClick,
     handleNewClick,
     handleBlancClick,
@@ -247,6 +249,15 @@ export default function BloombergTerminal() {
     );
   }
 
+  // Add the condition for the commodities view
+  if (currentView === "commodities") {
+    return (
+      <TerminalLayout shortcuts={shortcuts}>
+        <CommoditiesView isDarkMode={isDarkMode} onBack={handleBackFromView} />
+      </TerminalLayout>
+    );
+  }
+
   return (
     <TerminalLayout shortcuts={shortcuts}>
       <TerminalHeader
@@ -259,6 +270,7 @@ export default function BloombergTerminal() {
         onVolatilityClick={handleVolatilityView}
         onRmiClick={handleRmiView}
         onCryptoClick={handleCryptoView}
+        onCommoditiesClick={handleCommoditiesView}
         onHelpClick={handleHelpClick}
         onThemeToggle={handleThemeToggle}
       />

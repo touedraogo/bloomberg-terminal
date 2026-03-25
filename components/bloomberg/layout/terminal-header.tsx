@@ -6,6 +6,7 @@ import {
   BarChart2,
   Bitcoin,
   Database,
+  Gem,
   HelpCircle,
   Moon,
   Newspaper,
@@ -28,6 +29,7 @@ type TerminalHeaderProps = {
   onVolatilityClick: () => void;
   onRmiClick: () => void;
   onCryptoClick: () => void;
+  onCommoditiesClick: () => void;
   onHelpClick: () => void;
   onThemeToggle: () => void;
 };
@@ -42,6 +44,7 @@ export function TerminalHeader({
   onVolatilityClick,
   onRmiClick,
   onCryptoClick,
+  onCommoditiesClick,
   onHelpClick,
   onThemeToggle,
 }: TerminalHeaderProps) {
@@ -116,6 +119,10 @@ export function TerminalHeader({
       <BloombergButton color="green" onClick={onCryptoClick}>
         <Bitcoin className="h-3 w-3 mr-1" />
         CRYPTO
+      </BloombergButton>
+      <BloombergButton color="green" onClick={onCommoditiesClick}>
+        <Gem className="h-3 w-3 mr-1" />
+        COMMO
       </BloombergButton>
 
       <BloombergButton color="accent" onClick={onHelpClick}>
