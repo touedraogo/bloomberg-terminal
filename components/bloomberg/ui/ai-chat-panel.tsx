@@ -11,6 +11,8 @@ interface AIChatPanelProps {
   initialPrompt: string;
   currentView: string;
   marketData: unknown;
+  cryptoData: unknown;
+  commoditiesData: unknown;
   isDarkMode: boolean;
 }
 
@@ -20,6 +22,8 @@ export function AIChatPanel({
   initialPrompt,
   currentView,
   marketData,
+  cryptoData,
+  commoditiesData,
   isDarkMode,
 }: AIChatPanelProps) {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
@@ -55,6 +59,26 @@ export function AIChatPanel({
             context += `  ${item.id}: ${item.value?.toLocaleString()} (${change}%)\n`;
           }
         }
+      }
+    }
+
+    if (currentView === "crypto" && cryptoData && typeof cryptoData === "object") {
+      const data = cryptoData as { assets?: { symbol: string; price: number; changePct24h: number }[] };
+      context += "CRYPTO PRICES:\n";
+      const assets = data.assets || [];
+      for (const asset of assets.slice(0, 10)) {
+        const change = asset.changePct24h >= 0 ? `+${asset.changePct24h}` : `${asset.changePct24h}`;
+        context += `  ${asset.symbol}: $${asset.price?.toLocaleString()} (${change}%)\n`;
+      }
+    }
+
+    if (currentView === "commodities" && commoditiesData && typeof commoditiesData === "object") {
+      const data = commoditiesData as { commodities?: { name: string; price: number; changePct24h: number }[] };
+      context += "COMMODITIES PRICES:\n";
+      const commodities = data.commodities || [];
+      for (const c of commodities.slice(0, 10)) {
+        const change = c.changePct24h >= 0 ? `+${c.changePct24h}` : `${c.changePct24h}`;
+        context += `  ${c.name}: $${c.price?.toLocaleString()} (${change}%)\n`;
       }
     }
 

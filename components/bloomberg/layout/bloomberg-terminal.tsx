@@ -345,6 +345,8 @@ export default function BloombergTerminal() {
         initialPrompt={aiChatPrompt}
         currentView={currentView}
         marketData={data}
+        cryptoData={null}
+        commoditiesData={null}
         isDarkMode={isDarkMode}
       />
     </TerminalLayout>
