@@ -4,7 +4,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { RefreshCw, Send, X } from "lucide-react";
 import { useState } from "react";
 import { BloombergButton } from "../core/bloomberg-button";
-import { bloombergColors } from "../lib/theme-config";
 
 interface CryptoAnalysisProps {
   cryptoData: unknown;
@@ -12,7 +11,6 @@ interface CryptoAnalysisProps {
 }
 
 export function CryptoAnalysis({ cryptoData, isDarkMode }: CryptoAnalysisProps) {
-  const colors = isDarkMode ? bloombergColors.dark : bloombergColors.light;
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -75,53 +73,74 @@ export function CryptoAnalysis({ cryptoData, isDarkMode }: CryptoAnalysisProps) 
   };
 
   return (
-    <div className="p-4 border rounded-sm mt-4" style={{ borderColor: colors.border, backgroundColor: colors.surface }}>
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-sm font-bold">AI CRYPTO ANALYSIS</h3>
+    <div className="flex flex-col h-full bg-gray-900 rounded-lg p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">₿</span>
+          <h3 className="text-sm font-bold text-white">AI - Analyse Crypto</h3>
+        </div>
         <div className="flex gap-2">
-          <BloombergButton color="accent" onClick={analyzeCrypto} disabled={isLoading} className="flex items-center gap-1 text-xs">
+          <button
+            type="button"
+            onClick={analyzeCrypto}
+            disabled={isLoading}
+            className="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded text-xs flex items-center gap-1 disabled:opacity-50"
+          >
             <RefreshCw className="h-3 w-3" />
             ANALYSE
-          </BloombergButton>
+          </button>
           {messages.length > 0 && (
-            <BloombergButton color="red" onClick={() => setMessages([])} className="flex items-center gap-1 text-xs">
+            <button
+              type="button"
+              onClick={() => setMessages([])}
+              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded text-xs flex items-center gap-1"
+            >
               <X className="h-3 w-3" />
               CLEAR
-            </BloombergButton>
+            </button>
           )}
         </div>
       </div>
 
-      <div className="p-3 mb-4 border rounded-sm text-xs" style={{ borderColor: colors.border, backgroundColor: colors.background, minHeight: "80px" }}>
+      <div className="flex-1 overflow-y-auto space-y-2 mb-3 min-h-0">
         {isLoading && messages.length === 0 ? (
           <Skeleton className="h-16 w-full" />
         ) : messages.length > 0 ? (
-          <div className="space-y-2">
-            {messages.map((msg, i) => (
-              <div key={i} className={msg.role === "user" ? "text-right" : ""}>
-                <span className="font-bold">{msg.role === "user" ? "VOUS: " : "AI: "}</span>
-                <span>{msg.content}</span>
-              </div>
-            ))}
-          </div>
+          messages.map((msg, idx) => (
+            <div
+              key={idx}
+              className={`text-sm p-2 rounded ${
+                msg.role === "user"
+                  ? "bg-orange-600 text-white text-right ml-16"
+                  : "bg-gray-800 text-gray-200 mr-16"
+              }`}
+            >
+              {msg.content}
+            </div>
+          ))
         ) : (
-          <p className="text-gray-500">Cliquez ANALYSE pour une analyse du marché crypto.</p>
+          <p className="text-sm text-gray-400">Cliquez ANALYSE pour une analyse du marché crypto.</p>
         )}
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 mt-auto">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && askQuestion()}
+          onKeyDown={(e) => e.key === "Enter" && !isLoading && askQuestion()}
           placeholder="Posez une question sur le marché crypto..."
-          className="flex-1 px-3 py-2 text-xs rounded-sm border"
-          style={{ backgroundColor: colors.background, borderColor: colors.border, color: colors.text }}
+          className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-500"
+          disabled={isLoading}
         />
-        <BloombergButton color="accent" onClick={askQuestion} disabled={isLoading || !input.trim()}>
+        <button
+          type="button"
+          onClick={askQuestion}
+          disabled={isLoading || !input.trim()}
+          className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded text-sm disabled:opacity-50"
+        >
           <Send className="h-3 w-3" />
-        </BloombergButton>
+        </button>
       </div>
     </div>
   );
