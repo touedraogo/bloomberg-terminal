@@ -30,7 +30,7 @@ export function AIChatPanel({
   const [input, setInput] = useState(initialPrompt || "");
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState<"context" | "free">("context");
-  const [useZeroClaw, setUseZeroClaw] = useState(false);
+  const [useZeroClaw, setUseZeroClaw] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const colors = isDarkMode ? bloombergColors.dark : bloombergColors.light;
 
@@ -46,7 +46,7 @@ export function AIChatPanel({
 
   const getPrefilledPrompt = () => {
     const dataContext = getContextForView();
-    return `Based on this data:\n${dataContext}\n\nProvide a brief market analysis and insights.`;
+    return `Basé sur ces données:\n${dataContext}\n\nFournis une brève analyse du marché et des insights en français.`;
   };
 
   const getContextForView = () => {
@@ -197,7 +197,16 @@ export function AIChatPanel({
               onChange={(e) => setUseZeroClaw(e.target.checked)}
               className="accent-orange-500"
             />
-            <span>ZeroClaw CLI</span>
+            <span>ZeroClaw (rapide)</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer text-xs">
+            <input
+              type="checkbox"
+              checked={!useZeroClaw}
+              onChange={(e) => setUseZeroClaw(!e.target.checked)}
+              className="accent-blue-500"
+            />
+            <span>OpenRouter</span>
           </label>
           {!useZeroClaw && (
             <>
