@@ -30,7 +30,7 @@ interface Coin {
 export function SwissPricesView() {
   const [activeTab, setActiveTab] = useState<"metals" | "bars" | "coins">("metals");
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["swissPrices"],
     queryFn: async () => {
       const response = await fetch("/api/swiss-prices");
@@ -60,6 +60,14 @@ export function SwissPricesView() {
               Source: {source} | Mis à jour: {lastUpdated}
             </p>
           </div>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="px-3 py-1 rounded text-xs bg-bbg-accent hover:bg-orange-600 disabled:opacity-50"
+          >
+            {isFetching ? "Chargement..." : "↻ Refresh"}
+          </button>
         </div>
       </div>
 
