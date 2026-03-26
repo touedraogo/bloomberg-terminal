@@ -33,19 +33,17 @@ export function GeneralMarketAnalysis({ marketData, colors }: GeneralMarketAnaly
     if (!marketData) return "";
     let ctx = "DONNÉES DU MARCHÉ:\n";
     
-    if (marketData.stocks) {
-      ctx += "\n📊 ACTIONS:\n";
-      marketData.stocks.slice(0, 10).forEach((stock: { symbol: string; price: number; change: number }) => {
-        const sign = stock.change >= 0 ? "+" : "";
-        ctx += `  ${stock.symbol}: $${stock.price?.toFixed(2)} (${sign}${stock.change?.toFixed(2)}%)\n`;
-      });
-    }
+    const allItems = [
+      ...(marketData.americas || []),
+      ...(marketData.emea || []),
+      ...(marketData.asiaPacific || []),
+    ];
     
-    if (marketData.indices) {
-      ctx += "\n📈 INDICES:\n";
-      marketData.indices.slice(0, 5).forEach((index: { symbol: string; price: number; change: number }) => {
-        const sign = index.change >= 0 ? "+" : "";
-        ctx += `  ${index.symbol}: ${index.price?.toFixed(2)} (${sign}${index.change?.toFixed(2)}%)\n`;
+    if (allItems.length > 0) {
+      ctx += "\n📊 DONNÉES DE MARCHÉ:\n";
+      allItems.slice(0, 15).forEach((item) => {
+        const sign = item.change >= 0 ? "+" : "";
+        ctx += `  ${item.id}: ${item.value?.toFixed(2)} (${sign}${item.pctChange?.toFixed(2)}%)\n`;
       });
     }
     
@@ -61,7 +59,7 @@ export function GeneralMarketAnalysis({ marketData, colors }: GeneralMarketAnaly
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: [{ role: "user", content: `Basé sur ces données:\n${getContext()}\n\nFournis un aperçu des conditions actuelles du marché en français.` }],
+          messages: [{ role: "user", content: `${getContext()}\n\nFournis un aperçu des conditions actuelles du marché en français, en te basant sur les données ci-dessus.` }],
           marketData: { fullMarketData: marketData },
         }),
       });
