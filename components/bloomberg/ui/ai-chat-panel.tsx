@@ -30,6 +30,7 @@ export function AIChatPanel({
   const [input, setInput] = useState(initialPrompt || "");
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState<"context" | "free">("context");
+  const [useZeroClaw, setUseZeroClaw] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const colors = isDarkMode ? bloombergColors.dark : bloombergColors.light;
 
@@ -99,28 +100,50 @@ export function AIChatPanel({
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: [{ role: "user", content: userMessage }],
-          marketData: mode === "context" ? { context: getContextForView(), currentView } : undefined,
-        }),
-      });
+      if (useZeroClaw) {
+        const response = await fetch("/api/zeroclaw", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: userMessage }),
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (data.error) {
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: `Error: ${data.error}` },
-        ]);
+        if (data.error) {
+          setMessages((prev) => [
+            ...prev,
+            { role: "assistant", content: `Error: ${data.error}` },
+          ]);
+        } else {
+          setMessages((prev) => [
+            ...prev,
+            { role: "assistant", content: data.response || "No response" },
+          ]);
+        }
       } else {
-        const content = data.choices?.[0]?.message?.content || "No response";
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content },
-        ]);
+        const response = await fetch("/api/ai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: [{ role: "user", content: userMessage }],
+            marketData: mode === "context" ? { context: getContextForView(), currentView } : undefined,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+          setMessages((prev) => [
+            ...prev,
+            { role: "assistant", content: `Error: ${data.error}` },
+          ]);
+        } else {
+          const content = data.choices?.[0]?.message?.content || "No response";
+          setMessages((prev) => [
+            ...prev,
+            { role: "assistant", content },
+          ]);
+        }
       }
     } catch {
       setMessages((prev) => [
@@ -154,7 +177,7 @@ export function AIChatPanel({
         >
           <div className="flex items-center gap-2">
             <Bot className="w-4 h-4 text-orange-500" />
-            <span className="text-xs font-bold">AI ASSISTANT</span>
+            <span className="text-xs font-bold">AI {useZeroClaw ? "(ZeroClaw)" : "(OpenRouter)"}</span>
           </div>
           <button
             type="button"
@@ -169,30 +192,43 @@ export function AIChatPanel({
         <div className="flex items-center gap-6 px-4 py-2 border-b" style={{ borderColor: colors.border }}>
           <label className="flex items-center gap-2 cursor-pointer text-xs">
             <input
-              type="radio"
-              name="aimode"
-              checked={mode === "context"}
-              onChange={() => {
-                setMode("context");
-                setInput(getPrefilledPrompt());
-              }}
+              type="checkbox"
+              checked={useZeroClaw}
+              onChange={(e) => setUseZeroClaw(e.target.checked)}
               className="accent-orange-500"
             />
-            <span>Avec Contexte (pré-rempli)</span>
+            <span>ZeroClaw CLI</span>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer text-xs">
-            <input
-              type="radio"
-              name="aimode"
-              checked={mode === "free"}
-              onChange={() => {
-                setMode("free");
-                setInput("");
-              }}
-              className="accent-orange-500"
-            />
-            <span>Libre</span>
-          </label>
+          {!useZeroClaw && (
+            <>
+              <label className="flex items-center gap-2 cursor-pointer text-xs">
+                <input
+                  type="radio"
+                  name="aimode"
+                  checked={mode === "context"}
+                  onChange={() => {
+                    setMode("context");
+                    setInput(getPrefilledPrompt());
+                  }}
+                  className="accent-orange-500"
+                />
+                <span>Avec Contexte</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer text-xs">
+                <input
+                  type="radio"
+                  name="aimode"
+                  checked={mode === "free"}
+                  onChange={() => {
+                    setMode("free");
+                    setInput("");
+                  }}
+                  className="accent-orange-500"
+                />
+                <span>Libre</span>
+              </label>
+            </>
+          )}
         </div>
 
         {/* Messages */}
