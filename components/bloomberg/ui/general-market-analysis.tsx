@@ -1,12 +1,9 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useChat } from "@ai-sdk/react";
+import { useState } from "react";
 import { RefreshCw, Send, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { BloombergButton } from "../core/bloomberg-button";
 import type { MarketData } from "../types";
 
 interface GeneralMarketAnalysisProps {
@@ -22,37 +19,93 @@ interface GeneralMarketAnalysisProps {
   };
 }
 
+interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
 export function GeneralMarketAnalysis({ marketData, colors }: GeneralMarketAnalysisProps) {
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error, setMessages } =
-    useChat({
-      api: "/api/ai",
-      body: {
-        marketData: {
-          fullMarketData: marketData,
-        },
-      },
-      id: "general-market-analysis",
-    });
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const generateMarketOverview = () => {
-    setMessages([
-      {
-        id: "system-1",
-        role: "system",
-        content: "Tu es un analyste financier IA. Fournis un bref aperçu du marché en français.",
-      },
-      {
-        id: "user-1",
-        role: "user",
-        content:
-          "Fournis un bref aperçu des conditions actuelles du marché basées sur les données fournies, en français.",
-      },
-    ]);
+  const getContext = () => {
+    if (!marketData) return "";
+    let ctx = "DONNÉES DU MARCHÉ:\n";
+    
+    if (marketData.stocks) {
+      ctx += "\n📊 ACTIONS:\n";
+      marketData.stocks.slice(0, 10).forEach((stock: { symbol: string; price: number; change: number }) => {
+        const sign = stock.change >= 0 ? "+" : "";
+        ctx += `  ${stock.symbol}: $${stock.price?.toFixed(2)} (${sign}${stock.change?.toFixed(2)}%)\n`;
+      });
+    }
+    
+    if (marketData.indices) {
+      ctx += "\n📈 INDICES:\n";
+      marketData.indices.slice(0, 5).forEach((index: { symbol: string; price: number; change: number }) => {
+        const sign = index.change >= 0 ? "+" : "";
+        ctx += `  ${index.symbol}: ${index.price?.toFixed(2)} (${sign}${index.change?.toFixed(2)}%)\n`;
+      });
+    }
+    
+    return ctx;
   };
 
-  const clearChat = () => {
-    setMessages([]);
+  const generateMarketOverview = async () => {
+    setIsLoading(true);
+    setMessages([{ role: "user", content: "Analyse les conditions actuelles du marché" }]);
+
+    try {
+      const response = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: `Basé sur ces données:\n${getContext()}\n\nFournis un aperçu des conditions actuelles du marché en français.` }],
+          marketData: { fullMarketData: marketData },
+        }),
+      });
+      const data = await response.json();
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: data.choices?.[0]?.message?.content || "No response" },
+      ]);
+    } catch {
+      setMessages((prev) => [...prev, { role: "assistant", content: "Erreur de connexion" }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const askQuestion = async () => {
+    if (!input.trim()) return;
+    setIsLoading(true);
+    setMessages((prev) => [...prev, { role: "user", content: input }]);
+    const question = input;
+    setInput("");
+
+    try {
+      const response = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: `${question}\n\nContexte:\n${getContext()}` }],
+          marketData: { fullMarketData: marketData },
+        }),
+      });
+      const data = await response.json();
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: data.choices?.[0]?.message?.content || "No response" },
+      ]);
+    } catch {
+      setMessages((prev) => [...prev, { role: "assistant", content: "Erreur de connexion" }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const clearChat = () => setMessages([]);
 
   return (
     <div className="flex flex-col h-full bg-gray-900 rounded-lg p-4">
@@ -86,10 +139,9 @@ export function GeneralMarketAnalysis({ marketData, colors }: GeneralMarketAnaly
 
       <div className="flex-1 overflow-y-auto mb-3 min-h-0">
         {isLoading && messages.length === 0 ? (
-          <Skeleton className="h-16 w-full" />
-        ) : error ? (
-          <div className="bg-red-900/50 text-red-200 p-3 rounded text-sm">
-            Erreur: {error.message}. Veuillez réessayer.
+          <div className="flex items-center gap-2 text-gray-400">
+            <RefreshCw className="h-4 w-4 animate-spin" />
+            Analyse en cours...
           </div>
         ) : messages.length > 0 ? (
           messages.map((msg, idx) => (
@@ -122,15 +174,15 @@ export function GeneralMarketAnalysis({ marketData, colors }: GeneralMarketAnaly
           <input
             type="text"
             value={input}
-            onChange={handleInputChange}
-            onKeyDown={(e) => e.key === "Enter" && handleSubmit(e)}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && !isLoading && askQuestion()}
             placeholder="Posez une question sur les tendances du marché..."
             className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-500"
             disabled={isLoading}
           />
           <button
             type="button"
-            onClick={(e) => handleSubmit(e)}
+            onClick={askQuestion}
             disabled={isLoading || !input.trim()}
             className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded text-sm disabled:opacity-50"
           >
