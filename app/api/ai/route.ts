@@ -9,9 +9,9 @@ export const maxDuration = 30;
 
 export const runtime = "edge";
 
-// OpenRouter configuration
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-const MODEL_NAME = "arcee-ai/trinity-large-preview:free";
+// FreeRouter configuration (self-hosted OpenRouter alternative)
+const FREEROUTER_URL = process.env.FREEROUTER_URL || "http://192.168.2.2:18800";
+const MODEL_NAME = "openrouter/arcee-ai/trinity-large-preview:free";
 
 // Define validation schema for request body
 const requestSchema = z.object({
@@ -118,28 +118,16 @@ export async function POST(req: NextRequest) {
     const messagesWithoutLast = messages.slice(0, -1);
     const allMessages = [...messagesWithoutLast, enhancedMessage];
 
-    // Check API key
-    if (!OPENROUTER_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "OpenRouter API key not configured" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // Call OpenRouter API
-    console.log("=== OPENROUTER REQUEST ===");
-    console.log("API Key:", OPENROUTER_API_KEY ? OPENROUTER_API_KEY.slice(0, 20) + "..." : "MISSING");
+    // Call FreeRouter API
+    console.log("=== FREEROUTER REQUEST ===");
+    console.log("URL:", FREEROUTER_URL);
     console.log("Model:", MODEL_NAME);
     console.log("Messages count:", allMessages.length);
-    console.log("First message length:", allMessages[0]?.content?.length || 0);
     
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const response = await fetch(`${FREEROUTER_URL}/v1/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-        "HTTP-Referer": process.env.ALLOWED_ORIGINS?.split(",")[0] || "http://localhost:3000",
-        "X-Title": "Bloomberg Terminal",
       },
       body: JSON.stringify({
         model: MODEL_NAME,
@@ -154,7 +142,7 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const error = await response.text();
-      console.error("OpenRouter API error:", error);
+      console.error("FreeRouter API error:", error);
       return new Response(
         JSON.stringify({ error: "Failed to generate AI response" }),
         { status: 500, headers: { "Content-Type": "application/json" } }
