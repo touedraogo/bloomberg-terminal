@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { SwissPricesAnalysis } from "../ui/swiss-prices-analysis";
 
 interface SwissPricesViewProps {
@@ -8,6 +9,9 @@ interface SwissPricesViewProps {
 }
 
 export function SwissPricesView({ isDarkMode, onBack }: SwissPricesViewProps) {
+  const [iframeError, setIframeError] = useState(false);
+  const bcvUrl = "https://www.bcv.ch/fr/home/informations-financieres/metaux-precieux.html";
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -31,7 +35,7 @@ export function SwissPricesView({ isDarkMode, onBack }: SwissPricesViewProps) {
             </div>
           </div>
           <a
-            href="https://www.bcv.ch/fr/home/informations-financieres/metaux-precieux.html"
+            href={bcvUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="px-3 py-1 rounded text-xs bg-bbg-accent hover:bg-orange-600"
@@ -42,13 +46,30 @@ export function SwissPricesView({ isDarkMode, onBack }: SwissPricesViewProps) {
       </div>
 
       {/* Embedded BCV Page - réduit pour laisser place à l'IA */}
-      <div className="h-[50%] overflow-hidden">
-        <iframe
-          src="https://www.bcv.ch/fr/home/informations-financieres/metaux-precieux.html"
-          className="w-full h-full border-0"
-          title="BCV Precious Metals Prices"
-          sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-        />
+      <div className="h-[50%] overflow-hidden bg-bbg-primary">
+        {iframeError ? (
+          <div className="flex flex-col items-center justify-center h-full text-center p-4">
+            <p className="text-gray-400 mb-4">
+              BCV ne permet pas l&apos;intégration iframe.
+            </p>
+            <a
+              href={bcvUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 bg-bbg-accent hover:bg-orange-600 rounded text-sm"
+            >
+              Ouvrir BCV dans une nouvelle fenêtre ↗
+            </a>
+          </div>
+        ) : (
+          <iframe
+            src={bcvUrl}
+            className="w-full h-full border-0"
+            title="BCV Precious Metals Prices"
+            sandbox="allow-scripts allow-forms"
+            onError={() => setIframeError(true)}
+          />
+        )}
       </div>
 
       {/* AI Analysis Panel */}
