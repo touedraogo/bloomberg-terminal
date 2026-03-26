@@ -2,6 +2,8 @@
 
 import { RefreshCw, Send } from "lucide-react";
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface SwissPricesAnalysisProps {
   isDarkMode: boolean;
@@ -47,7 +49,7 @@ export function SwissPricesAnalysis({ isDarkMode }: SwissPricesAnalysisProps) {
     <div className="flex flex-col h-full bg-gray-900 rounded-lg p-4">
       <div className="flex items-center gap-2 mb-3">
         <span className="text-lg">💰</span>
-        <h3 className="font-bold text-white">IA - Analyse BCV</h3>
+        <h3 className="font-bold text-white">AI - Analyse BCV</h3>
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-2 mb-3 min-h-0">
@@ -59,13 +61,19 @@ export function SwissPricesAnalysis({ isDarkMode }: SwissPricesAnalysisProps) {
           messages.map((msg, idx) => (
             <div
               key={idx}
-              className={`text-sm p-2 rounded ${
+              className={`text-sm p-3 rounded ${
                 msg.role === "user"
                   ? "bg-orange-600 text-white text-right ml-16"
-                  : "bg-gray-800 text-gray-200 mr-16"
+                  : "bg-gray-800 text-gray-200 mr-16 prose prose-sm prose-invert max-w-none"
               }`}
             >
-              {msg.content}
+              {msg.role === "user" ? (
+                msg.content
+              ) : (
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {msg.content}
+                </ReactMarkdown>
+              )}
             </div>
           ))
         )}
@@ -91,7 +99,7 @@ export function SwissPricesAnalysis({ isDarkMode }: SwissPricesAnalysisProps) {
           type="button"
           onClick={askQuestion}
           disabled={isLoading || !input.trim()}
-          className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded text-sm disabled:opacity-50"
         >
           <Send className="w-4 h-4" />
         </button>

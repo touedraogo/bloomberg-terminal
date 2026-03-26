@@ -3,7 +3,8 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { RefreshCw, Send, X } from "lucide-react";
 import { useState } from "react";
-import { BloombergButton } from "../core/bloomberg-button";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface CryptoAnalysisProps {
   cryptoData: unknown;
@@ -109,13 +110,19 @@ export function CryptoAnalysis({ cryptoData, isDarkMode }: CryptoAnalysisProps) 
           messages.map((msg, idx) => (
             <div
               key={idx}
-              className={`text-sm p-2 rounded ${
+              className={`text-sm p-3 rounded ${
                 msg.role === "user"
                   ? "bg-orange-600 text-white text-right ml-16"
-                  : "bg-gray-800 text-gray-200 mr-16"
+                  : "bg-gray-800 text-gray-200 mr-16 prose prose-sm prose-invert max-w-none"
               }`}
             >
-              {msg.content}
+              {msg.role === "user" ? (
+                msg.content
+              ) : (
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {msg.content}
+                </ReactMarkdown>
+              )}
             </div>
           ))
         ) : (
