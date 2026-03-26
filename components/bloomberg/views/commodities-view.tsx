@@ -5,6 +5,7 @@ import { bloombergColors } from "../lib/theme-config";
 import { useState, useEffect } from "react";
 import { Sparkline } from "../ui/sparkline";
 import { SwissPricesView } from "./swiss-prices-view";
+import { CommoditiesAnalysis } from "../ui/commodities-analysis";
 
 interface Commodity {
   id: string;
@@ -262,6 +263,11 @@ export default function CommoditiesView({ isDarkMode, onBack }: CommoditiesViewP
       {/* Footer */}
       <div className="px-4 py-2 border-t border-gray-700 text-xs text-gray-400">
         {data?.source} | Auto-refresh: 30s | oz=ounce | MT=metric ton | bbl=barrel | bu=bushel
+      </div>
+
+      {/* AI Analysis */}
+      <div className="px-4 pb-4">
+        <CommoditiesAnalysis commoditiesData={data} isDarkMode={isDarkMode} />
       </div>
     </div>
   );

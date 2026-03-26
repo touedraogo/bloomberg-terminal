@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { bloombergColors } from "../lib/theme-config";
 import { useState, useEffect } from "react";
 import { Sparkline } from "../ui/sparkline";
+import { CryptoAnalysis } from "../ui/crypto-analysis";
 
 interface CryptoAsset {
   id: string;
@@ -178,6 +179,11 @@ export default function CryptoView({ isDarkMode, onBack }: CryptoViewProps) {
       {/* Footer */}
       <div className="px-4 py-2 border-t border-gray-700 text-xs text-gray-400">
         Data source: Alpha Vantage | Auto-refresh: 30s
+      </div>
+
+      {/* AI Analysis */}
+      <div className="px-4 pb-4">
+        <CryptoAnalysis cryptoData={data} isDarkMode={isDarkMode} />
       </div>
     </div>
   );
