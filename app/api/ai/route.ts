@@ -9,9 +9,9 @@ export const maxDuration = 30;
 
 export const runtime = "edge";
 
-// FreeRouter configuration (self-hosted OpenRouter alternative)
-const FREEROUTER_URL = process.env.FREEROUTER_URL || "http://192.168.2.2:18800";
-const MODEL_NAME = "openrouter/arcee-ai/trinity-large-preview:free";
+// ClawRouter configuration (smart LLM router with direct API keys)
+const CLAWROUTER_URL = process.env.CLAWROUTER_URL || "http://192.168.2.2:8402";
+const MODEL_NAME = "auto";
 
 // Define validation schema for request body
 const requestSchema = z.object({
@@ -118,13 +118,13 @@ export async function POST(req: NextRequest) {
     const messagesWithoutLast = messages.slice(0, -1);
     const allMessages = [...messagesWithoutLast, enhancedMessage];
 
-    // Call FreeRouter API
-    console.log("=== FREEROUTER REQUEST ===");
-    console.log("URL:", FREEROUTER_URL);
+    // Call ClawRouter API
+    console.log("=== CLAWROUTER REQUEST ===");
+    console.log("URL:", CLAWROUTER_URL);
     console.log("Model:", MODEL_NAME);
     console.log("Messages count:", allMessages.length);
     
-    const response = await fetch(`${FREEROUTER_URL}/v1/chat/completions`, {
+    const response = await fetch(`${CLAWROUTER_URL}/v1/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const error = await response.text();
-      console.error("FreeRouter API error:", error);
+      console.error("ClawRouter API error:", error);
       return new Response(
         JSON.stringify({ error: "Failed to generate AI response" }),
         { status: 500, headers: { "Content-Type": "application/json" } }
