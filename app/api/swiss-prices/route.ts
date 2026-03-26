@@ -29,46 +29,46 @@ interface Coin {
 }
 
 export async function GET() {
-  const lastUpdated = "25.03.2026";
+  const lastUpdated = "26.03.2026";
   
   const preciousMetals: SwissMetal[] = [
     {
       id: "GOLD",
       name: "Or",
-      buyPrice: 4541.1,
-      sellPrice: 4561.1,
-      buyPriceCHF: 115487,
-      sellPriceCHF: 116087,
+      buyPrice: 4440.91,
+      sellPrice: 4460.91,
+      buyPriceCHF: 113227,
+      sellPriceCHF: 113827,
       unit: "oz",
       lastUpdated,
     },
     {
       id: "SILVER",
       name: "Argent",
-      buyPrice: 72.04,
-      sellPrice: 72.94,
-      buyPriceCHF: 1831,
-      sellPriceCHF: 1857,
+      buyPrice: 68.77,
+      sellPrice: 69.67,
+      buyPriceCHF: 1753,
+      sellPriceCHF: 1779,
       unit: "oz",
       lastUpdated,
     },
     {
       id: "PLATINUM",
       name: "Platine",
-      buyPrice: 1941.33,
-      sellPrice: 1967.33,
-      buyPriceCHF: 49279,
-      sellPriceCHF: 50099,
+      buyPrice: 1852.8,
+      sellPrice: 1878.8,
+      buyPriceCHF: 47186,
+      sellPriceCHF: 48006,
       unit: "oz",
       lastUpdated,
     },
     {
       id: "PALLADIUM",
       name: "Palladium",
-      buyPrice: 1409.75,
-      sellPrice: 1453.75,
-      buyPriceCHF: 35794,
-      sellPriceCHF: 37094,
+      buyPrice: 1353.75,
+      sellPrice: 1397.75,
+      buyPriceCHF: 34441,
+      sellPriceCHF: 35741,
       unit: "oz",
       lastUpdated,
     },
