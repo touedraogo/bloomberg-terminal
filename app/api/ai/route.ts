@@ -128,6 +128,8 @@ export async function POST(req: NextRequest) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "X-Client": "BloombergTerminal",
+        "X-Client-Version": "1.0.0",
       },
       body: JSON.stringify({
         model: MODEL_NAME,
