@@ -40,13 +40,13 @@ export function GeneralMarketAnalysis({ marketData, colors }: GeneralMarketAnaly
       {
         id: "system-1",
         role: "system",
-        content: "You are an AI financial analyst. Provide a brief market overview.",
+        content: "Tu es un analyste financier IA. Fournis un bref aperçu du marché en français.",
       },
       {
         id: "user-1",
         role: "user",
         content:
-          "Provide a brief overview of the current market conditions based on the data provided.",
+          "Fournis un bref aperçu des conditions actuelles du marché basées sur les données fournies, en français.",
       },
     ]);
   };
@@ -61,7 +61,7 @@ export function GeneralMarketAnalysis({ marketData, colors }: GeneralMarketAnaly
       style={{ borderColor: colors.border, backgroundColor: colors.surface }}
     >
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-sm font-bold">AI Market Analysis</h3>
+        <h3 className="text-sm font-bold text-white">AI - Analyse Marché</h3>
         <div className="flex gap-2">
           <BloombergButton
             color="accent"
@@ -70,7 +70,7 @@ export function GeneralMarketAnalysis({ marketData, colors }: GeneralMarketAnaly
             className="flex items-center gap-1 text-xs"
           >
             <RefreshCw className="h-3 w-3" />
-            MARKET OVERVIEW
+            MARCHÉ
           </BloombergButton>
 
           {messages.length > 0 && (
@@ -100,26 +100,25 @@ export function GeneralMarketAnalysis({ marketData, colors }: GeneralMarketAnaly
           <Skeleton className="h-16 w-full" />
         ) : error ? (
           <p className="text-xs" style={{ color: colors.negative }}>
-            Error: {error.message}. Please try again.
+            Erreur: {error.message}. Veuillez réessayer.
           </p>
         ) : messages.length > 0 && messages[messages.length - 1].role === "assistant" ? (
           <p className="text-xs whitespace-pre-line">{messages[messages.length - 1].content}</p>
         ) : (
           <p className="text-xs text-gray-500">
-            Click MARKET OVERVIEW to generate AI commentary on current market conditions, or ask a
-            specific question below.
+            Cliquez sur MARCHÉ pour générer une analyse IA des conditions actuelles du marché, ou posez une question ci-dessous.
           </p>
         )}
       </div>
 
       {/* Question and Answer Section */}
       <div className="mb-4">
-        <h4 className="text-xs font-bold mb-2">Ask About Market Data</h4>
+        <h4 className="text-xs font-bold mb-2">Questions sur le marché</h4>
         <form onSubmit={handleSubmit} className="flex gap-2">
           <Input
             value={input}
             onChange={handleInputChange}
-            placeholder="Ask about market trends, top performers, sectors, etc."
+            placeholder="Posez une question sur les tendances du marché, les meilleures performances, les secteurs, etc."
             className="flex-1 h-8 text-xs font-mono rounded-none border focus:ring-0 focus:ring-offset-0"
             style={{
               backgroundColor: colors.background,
@@ -135,7 +134,7 @@ export function GeneralMarketAnalysis({ marketData, colors }: GeneralMarketAnaly
             className="flex items-center gap-1 text-xs"
           >
             <Send className="h-3 w-3" />
-            ASK
+            POSER
           </BloombergButton>
         </form>
       </div>
