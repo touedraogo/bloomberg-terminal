@@ -170,7 +170,29 @@ export default function BloombergTerminal() {
         setAiChatPrompt("");
         setIsAIChatOpen(true);
       },
-      description: "Show AI chat",
+      description: "Show AI chat (Market)",
+    },
+    {
+      key: "c",
+      ctrlKey: true,
+      shiftKey: true,
+      action: () => {
+        handleCommoditiesView();
+        setAiChatPrompt("");
+        setIsAIChatOpen(true);
+      },
+      description: "Show AI chat (Commodities)",
+    },
+    {
+      key: "y",
+      ctrlKey: true,
+      shiftKey: true,
+      action: () => {
+        handleCryptoView();
+        setAiChatPrompt("");
+        setIsAIChatOpen(true);
+      },
+      description: "Show AI chat (Crypto)",
     },
     {
       key: "w",
