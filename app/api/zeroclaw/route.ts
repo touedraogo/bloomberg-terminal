@@ -35,7 +35,24 @@ export async function POST(req: NextRequest) {
       maxBuffer: 1024 * 1024,
     });
 
-    const response = stdout.trim() || stderr.trim();
+    const allOutput = (stdout + stderr).trim();
+    
+    const lines = allOutput.split("\n");
+    const responseLines: string[] = [];
+    let inResponse = false;
+
+    for (const line of lines) {
+      if (line.includes("Config loaded") || line.includes("Memory initialized") || 
+          line.includes("Docker sandbox") || line.includes(" WARN ") || line.includes(" INFO ")) {
+        inResponse = true;
+        continue;
+      }
+      if (inResponse || !line.startsWith("[")) {
+        responseLines.push(line);
+      }
+    }
+
+    const response = responseLines.join("\n").trim() || allOutput;
 
     return NextResponse.json({
       success: true,
