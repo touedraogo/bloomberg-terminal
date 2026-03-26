@@ -44,25 +44,25 @@ export function SwissPricesAnalysis({ isDarkMode }: SwissPricesAnalysisProps) {
   const clearChat = () => setMessages([]);
 
   return (
-    <div className="bg-bbg-secondary rounded-lg p-4 mt-2">
+    <div className="flex flex-col h-full bg-gray-900 rounded-lg p-4">
       <div className="flex items-center gap-2 mb-3">
         <span className="text-lg">💰</span>
-        <h3 className="font-bold">IA - Analyse BCV</h3>
+        <h3 className="font-bold text-white">IA - Analyse BCV</h3>
       </div>
 
-      <div className="space-y-2 mb-3 max-h-48 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto space-y-2 mb-3 min-h-0">
         {messages.length === 0 ? (
           <p className="text-sm text-gray-400">
             Posez une question sur les métaux précieux ou le marché suisse...
           </p>
         ) : (
-          messages.map((msg, i) => (
+          messages.map((msg, idx) => (
             <div
-              key={`${msg.role}-${i}`}
+              key={idx}
               className={`text-sm p-2 rounded ${
                 msg.role === "user"
-                  ? "bg-bbg-accent text-right ml-8"
-                  : "bg-bbg-primary mr-8"
+                  ? "bg-orange-600 text-white text-right ml-16"
+                  : "bg-gray-800 text-gray-200 mr-16"
               }`}
             >
               {msg.content}
@@ -77,21 +77,21 @@ export function SwissPricesAnalysis({ isDarkMode }: SwissPricesAnalysisProps) {
         )}
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 mt-auto">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && !isLoading && askQuestion()}
           placeholder="Question sur les métaux précieux..."
-          className="flex-1 bg-bbg-primary border border-gray-700 rounded px-3 py-2 text-sm"
+          className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-500"
           disabled={isLoading}
         />
         <button
           type="button"
           onClick={askQuestion}
           disabled={isLoading || !input.trim()}
-          className="px-4 py-2 bg-bbg-accent hover:bg-orange-600 rounded text-sm disabled:opacity-50"
+          className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Send className="w-4 h-4" />
         </button>
@@ -99,7 +99,7 @@ export function SwissPricesAnalysis({ isDarkMode }: SwissPricesAnalysisProps) {
           <button
             type="button"
             onClick={clearChat}
-            className="px-3 py-2 bg-bbg-hover rounded text-sm"
+            className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm"
           >
             ✕
           </button>
